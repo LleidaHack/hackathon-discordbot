@@ -8,4 +8,4 @@ RUN pip install -r requierements.txt
 
 COPY src/ .
 
-CMD [ "python", "./server.py" ]
+CMD [ "python3", "./bot.py" ]
