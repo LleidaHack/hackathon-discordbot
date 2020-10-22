@@ -7,7 +7,7 @@ class User:
         self.github = github
         self.nickname = nickname
         self.team = team
-        break
+        
     def join_group(self, team: Team):
         if (self.team):
             self.team.kick_user(self)

@@ -6,7 +6,7 @@ class Challenge:
         self.company = company
         self.icon = icon
         self.participants = []
-        break
+        
     def add_participant(self, team: Team):
         self.participants.append(team)
 
