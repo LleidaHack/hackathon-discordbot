@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 from team import Team
 class User:
-    def __init__(self, full_name, email, github, nickname, team: Team ):
-        self.full_name = full_name
-        self.email = email
-        self.github = github
-        self.nickname = nickname
+    def __init__(self, username, discrminator, discord_id, team, group_name):
+        self.username = username
+        self.discrminator = discrminator
+        self.discord_id = discord_id
         self.team = team
+        self.group_name = group_name
         
     def join_group(self, team: Team):
         if (self.team):

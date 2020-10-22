@@ -5,3 +5,4 @@ src/crud/__pycache__
 src/modules/__pycache__
 src/texts/__pycache__
 src/models/__pycache__
+src/certificate.json
