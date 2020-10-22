@@ -6,7 +6,7 @@ class Team:
         self.name = name
         self.members = []
         self.challenges = []
-        break
+        
 
     def add_user(self, user: User):
         self.members.append(user)

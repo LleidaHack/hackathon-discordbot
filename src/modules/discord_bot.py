@@ -2,4 +2,4 @@
 
 class DiscordBot:
     def __init__(self):
-        break
+        pass
