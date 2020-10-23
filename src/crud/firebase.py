@@ -1,4 +1,7 @@
 from firebase_admin import credentials, firestore, initialize_app
+from models.team import Team
+from models.user import User
+from models.webuser import WebUser
 import os
 class Firebase:
     def __init__(self):
@@ -10,21 +13,19 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
         for usr in todo_ref.stream():
             if (usr.to_dict()['email'] == email):
-                return usr.id, usr.to_dict()
+                return WebUser(usr.to_dict()['accepted'], usr.to_dict()['birthDate'], usr.to_dict()['displayName'], usr.to_dict()['email'], usr.to_dict()['fullName'], usr.to_dict()['githubUrl'], usr.to_dict()['nickname'])
         return False
     def recoverWebGroup(self, name):
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         doc = todo_ref.document(name).get()
         if doc:
-            return doc.to_dict()
+            return Team(doc.to_dict()['name'])
         return False
-    def createOrUpdateUser(self, username, discriminator, discord_id, email = "", group=None):
-        if group:
-            self.addUserToGroup(group, discord_id)
+    def createOrUpdateUser(self, user: User):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
 
-        json = {'username':username,"discriminator":discriminator,"id": discord_id,"email": email,"group": group}
-        doc = todo_ref.document(discord_id)
+        json = {'username':user.username,"discriminator":user.discriminator,"id": user.discord_id,"email": user.email,"group": user.group}
+        doc = todo_ref.document(user.discord_id)
         doc.set(json)
         pass
 
@@ -32,52 +33,28 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(discord_id).get()
-            return doc.to_dict()
+            #
+            return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'], doc.to_dict()['group'], doc.to_dict()['email'])
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (discriminator is not None and discriminator == usr.to_dict()['discriminator']):
-                    return usr.id, usr.to_dict()
+                    return User(usr.to_dict()['username'], usr.to_dict()['discrminator'], usr.to_dict()['id'], usr.to_dict()['group'], usr.to_dict()['email'])
+
         return False
-    def joinGroup(self, discord_id, group_name):
-        user = self.getUser(discord_id=discord_id)
-        if user:
-            self.createOrUpdateUser(user['username'], user['discriminator'], user['id'], user['email'], group_name)
-        else: return False
-    def leaveGroup(self, discord_id):
-        user = self.getUser(discord_id=discord_id)
-        if user:
-            self.createOrUpdateUser(user['username'], user['discriminator'], user['id'], user['email'], '')
-        else: return False
         
-    def createOrUpdateGroup(self, group_name = None, users = None, role_id=None, json=None):
+    def createOrUpdateGroup(self, group: Team):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
 
-        if not json:
-            json = {'name':group_name, "members":users, "role_id":role_id}
-        doc = todo_ref.document(group_name)
+        json = {'name':group.group_name, "members": group.users, "role_id": group.role_id}
+
+        doc = todo_ref.document(group.group_name)
         doc.set(json)
 
     def getGroup(self, group_name):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
         if group_name:
             doc = todo_ref.document(group_name).get()
-            return doc.to_dict()
-        return False
-
-    def addUserToGroup(self, group_name, user_id):
-        group = self.getGroup(group_name)
-        print(group)
-        print(len(group["members"]))
-        if group and len(group["members"]) < 4:
-            group['members'].append(user_id)
-            self.createOrUpdateGroup(group_name = group_name, json=group)
-        return False
-
-    def removeUserToGroup(self, group_name, user_id):
-        group = self.getGroup(group_name)
-        if group and user_id in group["members"]:
-            group['members'].remove(user_id)
-            self.createOrUpdateGroup(group_name = group_name, json=group)
+            return Team(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
         return False
 
     def createInvitation(self, user_id, group_name):
