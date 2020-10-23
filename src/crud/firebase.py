@@ -12,6 +12,12 @@ class Firebase:
             if (usr.to_dict()['email'] == email):
                 return usr.id, usr.to_dict()
         return False
+    def recoverWebGroup(self, name):
+        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
+        doc = todo_ref.document(name).get()
+        if doc:
+            return doc.to_dict()
+        return False
     def createOrUpdateUser(self, username, discriminator, discord_id, email = "", group=None):
         if group:
             self.addUserToGroup(group, discord_id)
