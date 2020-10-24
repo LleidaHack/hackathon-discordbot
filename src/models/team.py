@@ -7,10 +7,6 @@ class Team:
         self.members = users
         self.role_id = role_id
 
-    @staticmethod
-    def from_dict(dict):
-        return Team(dict['name'])
-
     def add_user(self, user: User):
         self.members.append(user)
     
