@@ -1,6 +1,12 @@
 #!/usr/bin/python3
 from dotenv import load_dotenv
+from modules.discord_bot import DiscordBot
+import logging
 
-class Bot:
-    def __init__(self):
-        pass
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    logging.debug("Reading env configuration")
+    load_dotenv()
+
+    bot = DiscordBot()
+    bot.start()

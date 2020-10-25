@@ -1,2 +1,4 @@
 src/.env
 .vscode
+__init__.py
+/venv/
