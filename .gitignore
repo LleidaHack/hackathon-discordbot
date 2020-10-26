@@ -1,2 +1,10 @@
 src/.env
 .vscode
+src/__pycache__
+src/crud/__pycache__
+src/modules/__pycache__
+src/texts/__pycache__
+src/models/__pycache__
+src/certificate.json
+__init__.py
+/venv/
