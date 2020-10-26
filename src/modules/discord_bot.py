@@ -5,7 +5,8 @@ from discord.ext import commands as discord_commands, tasks
 from crud.firebase import Firebase
 from models.user import User
 from models.team import Team
-# from discord.ext import commands as discord_commands
+
+
 
 class DiscordBot:
     def __init__(self):
@@ -32,6 +33,10 @@ class DiscordBot:
             await self.create_command(ctx)
         self.question_num=0
         pass
+
+        @self.client.event
+        async def on_member_join(member):
+            await self.login(member)
 
     def start(self):
         logging.info("Starting bot!")
@@ -118,3 +123,10 @@ class DiscordBot:
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
+                
+    async def login(self, member):
+        import texts.login_text as login_texts
+        logging.info("Enviando mensaje por privado para hacer login")
+        name = member.nick
+        await member.send(login_texts.send_message_login(name), delete_after=20)
+        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
