@@ -18,7 +18,7 @@ class Firebase:
     def recoverWebGroup(self, name):
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         doc = todo_ref.document(name).get()
-        if doc:
+        if doc.to_dict():
             return Team(doc.to_dict()['name'])
         return False
     def createOrUpdateUser(self, user: User):
@@ -32,9 +32,10 @@ class Firebase:
     def getUser(self, discord_id = None, username = None, discriminator = None):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
-            doc = todo_ref.document(discord_id).get()
+            doc = todo_ref.document(str(discord_id)).get()
             #
-            return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'], doc.to_dict()['group'], doc.to_dict()['email'])
+            if doc.to_dict():
+                return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'], doc.to_dict()['group'], doc.to_dict()['email'])
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (discriminator is not None and discriminator == usr.to_dict()['discriminator']):
@@ -45,16 +46,17 @@ class Firebase:
     def createOrUpdateGroup(self, group: Team):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
 
-        json = {'name':group.group_name, "members": group.users, "role_id": group.role_id}
+        json = {'name':group.name, "members": group.members, "role_id": group.role_id}
 
-        doc = todo_ref.document(group.group_name)
+        doc = todo_ref.document(group.name)
         doc.set(json)
 
     def getGroup(self, group_name):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
         if group_name:
             doc = todo_ref.document(group_name).get()
-            return Team(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
+            if doc.to_dict():
+                return Team(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
         return False
 
     def createInvitation(self, user_id, group_name):
