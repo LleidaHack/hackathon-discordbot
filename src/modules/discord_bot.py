@@ -10,7 +10,9 @@ from models.team import Team
 class DiscordBot:
     def __init__(self):
         logging.info("Reading bot config data")
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'))
+        intents = discord.Intents.all()
+
+        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions = True, intents = intents)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
@@ -31,7 +33,10 @@ class DiscordBot:
         async def create(ctx):
             await self.create_command(ctx)
         self.question_num=0
-        pass
+        @self.client.event
+        async def on_member_join(member):
+
+            await self.login(member)
 
     def start(self):
         logging.info("Starting bot!")
@@ -118,3 +123,11 @@ class DiscordBot:
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
+    @staticmethod
+    async def login(member):
+        import texts.login_text as login_texts
+
+        logging.info("Enviando mensaje por privado para hacer login")
+        name = member.nick
+        await member.send(login_texts.send_message_login(name), delete_after=20)
+        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)

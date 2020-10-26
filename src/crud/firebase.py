@@ -3,28 +3,34 @@ from models.team import Team
 from models.user import User
 from models.webuser import WebUser
 import os
+
 class Firebase:
     def __init__(self):
-        self.cred = credentials.Certificate('src\certificate.json')
+        self.cred = credentials.Certificate("src\certificate.json")
         self.default_app = initialize_app(self.cred)
         self.db = firestore.client()
-    
+
     def recoverWebUser(self, email):
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
         for usr in todo_ref.stream():
-            if (usr.to_dict()['email'] == email):
-                return WebUser(usr.to_dict()['accepted'], usr.to_dict()['birthDate'], usr.to_dict()['displayName'], usr.to_dict()['email'], usr.to_dict()['fullName'], usr.to_dict()['githubUrl'], usr.to_dict()['nickname'])
+            if usr.to_dict()['email'] == email:
+                return WebUser(usr.to_dict()['accepted'], usr.to_dict()['birthDate'], usr.to_dict()['displayName'],
+                               usr.to_dict()['email'], usr.to_dict()['fullName'], usr.to_dict()['githubUrl'],
+                               usr.to_dict()['nickname'])
         return False
+
     def recoverWebGroup(self, name):
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         doc = todo_ref.document(name).get()
-        if doc.to_dict():
+        if doc:
             return Team(doc.to_dict()['name'])
         return False
+
     def createOrUpdateUser(self, user: User):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
 
-        json = {'username':user.username,"discriminator":user.discriminator,"id": user.discord_id,"email": user.email,"group": user.group}
+        json = {'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
+                "email": user.email, "group": user.group}
         doc = todo_ref.document(user.discord_id)
         doc.set(json)
         pass
@@ -61,8 +67,7 @@ class Firebase:
 
     def createInvitation(self, user_id, group_name):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
-
-        json = {'user_id':user_id,"group_name":group_name,"status": 'PENDING'}
+        json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
         todo_ref.document(None).set(json)
 
     def recoverInvitation(self, user_id, group_name):
@@ -76,6 +81,6 @@ class Firebase:
         invitation = self.recoverInvitation(user_id, group_name)
         if invitation:
             invitation[1]['status'] = "ACCEPTED"
-            todo_ref.document(invitation[0]).set(invitation[1]) 
-        else: return False
-                
+            todo_ref.document(invitation[0]).set(invitation[1])
+        else:
+            return False
