@@ -5,12 +5,7 @@ from discord.ext import commands as discord_commands, tasks
 from crud.firebase import Firebase
 from models.user import User
 from models.team import Team
-<<<<<<< HEAD
-# from discord.ext import commands as discord_commands
-=======
 
-
->>>>>>> manudiv16-master
 
 class DiscordBot:
     def __init__(self):
@@ -38,16 +33,10 @@ class DiscordBot:
         async def create(ctx):
             await self.create_command(ctx)
         self.question_num=0
-<<<<<<< HEAD
-        @self.client.event
-        async def on_member_join(member):
 
-=======
-        pass
 
         @self.client.event
         async def on_member_join(member):
->>>>>>> manudiv16-master
             await self.login(member)
 
     def start(self):
