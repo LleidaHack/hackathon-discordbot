@@ -1,9 +1,11 @@
 #!/usr/bin/python3
-import logging, os
+import logging
+import os
+
 import discord
-from discord.ext import commands as discord_commands, tasks
+from discord.ext import commands as discord_commands
+
 from crud.firebase import Firebase
-from models.user import User
 from models.team import Team
 
 
@@ -12,37 +14,54 @@ class DiscordBot:
         logging.info("Reading bot config data")
         intents = discord.Intents.all()
 
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions = True, intents = intents)
+        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
         self.database = Firebase()
         logging.info("Reading bot functions")
 
-        self.questions={}
+        self.questions = {}
+
         @self.client.command()
         async def help(ctx):
             await self.help_command(ctx)
+
         @self.client.command()
-        async def ask(ctx,question):
-            await self.ask_command(ctx,question)
+        async def ask(ctx, question):
+            await self.ask_command(ctx, question)
+
         @self.client.command()
-        async def reply(ctx,num,reply):
-            await self.reply_command(ctx,num,reply)
+        async def reply(ctx, num, reply):
+            await self.reply_command(ctx, num, reply)
+
         @self.client.command()
         async def create(ctx):
             await self.create_command(ctx)
-        self.question_num=0
 
+        self.question_num = 0
 
         @self.client.event
         async def on_member_join(member):
             await self.login(member)
 
+        @self.client.command()
+        async def login(member, email: str):
+            await self.login(member, email)
+
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
 
+    async def login(self, member, email):
+        import texts.login_text as login_texts
+        logging.info("Enviando mensaje por privado para hacer login")
+        await member.send(login_texts.send_message_login(member.author), delete_after=20)
+        user = self.database.recoverWebUser(email)
+        if user:
+            await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
+        else:
+            pass
 
     async def help_command(self, ctx):
         import texts.help_texts as texts
@@ -59,7 +78,7 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
             return
-        if user.group_name != None or user.group_name != '':
+        if user.group_name is not None or user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
             return
@@ -69,7 +88,7 @@ class DiscordBot:
             await ctx.send(texts.SINTAXIX_ERROR)
             return
         group = self.database.getGroup(group_name=' '.join(command[1:]))
-        if not group:   
+        if not group:
             group = self.database.recoverWebGroup(' '.join(command[1:]))
         if group:
             logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
@@ -104,37 +123,23 @@ class DiscordBot:
         await ctx.send(texts.CREATED_GROUP)
 
         pass
-    
-    async def ask_command(self,ctx,question):
+
+    async def ask_command(self, ctx, question):
         import texts.ask_texts as ask_texts
         logging.info("Enviando pregunta")
         await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-        channelId=DiscordBot.get_channel_id(ctx,'preguntas_participantes')
+        channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
         channel = self.client.get_channel(channelId)
-        self.questions[self.question_num]=ctx.author
+        self.questions[self.question_num] = ctx.author
         print(self.questions)
-        await channel.send('#'+str(self.question_num)+'  >  '+question)
-        self.question_num+=1
+        await channel.send('#' + str(self.question_num) + '  >  ' + question)
+        self.question_num += 1
 
-    async def reply_command(self,ctx,num,reply):
+    async def reply_command(self, ctx, num, reply):
         await self.questions[int(num)].send('La respuesta a tu pregunta fue:  ' + reply)
 
     @staticmethod
-    def get_channel_id(ctx,name=None):
+    def get_channel_id(ctx, name=None):
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
-<<<<<<< HEAD
-    @staticmethod
-    async def login(member):
-        import texts.login_text as login_texts
-
-=======
-                
-    async def login(self, member):
-        import texts.login_text as login_texts
->>>>>>> manudiv16-master
-        logging.info("Enviando mensaje por privado para hacer login")
-        name = member.nick
-        await member.send(login_texts.send_message_login(name), delete_after=20)
-        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)

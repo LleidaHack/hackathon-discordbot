@@ -1,12 +1,15 @@
+import os
+
 from firebase_admin import credentials, firestore, initialize_app
+
 from models.team import Team
 from models.user import User
 from models.webuser import WebUser
-import os
+
 
 class Firebase:
     def __init__(self):
-        self.cred = credentials.Certificate("src\certificate.json")
+        self.cred = credentials.Certificate("src/certificate.json")
         self.default_app = initialize_app(self.cred)
         self.db = firestore.client()
 
