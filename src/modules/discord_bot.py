@@ -5,7 +5,12 @@ from discord.ext import commands as discord_commands, tasks
 from crud.firebase import Firebase
 from models.user import User
 from models.team import Team
+<<<<<<< HEAD
 # from discord.ext import commands as discord_commands
+=======
+
+
+>>>>>>> manudiv16-master
 
 class DiscordBot:
     def __init__(self):
@@ -33,9 +38,16 @@ class DiscordBot:
         async def create(ctx):
             await self.create_command(ctx)
         self.question_num=0
+<<<<<<< HEAD
         @self.client.event
         async def on_member_join(member):
 
+=======
+        pass
+
+        @self.client.event
+        async def on_member_join(member):
+>>>>>>> manudiv16-master
             await self.login(member)
 
     def start(self):
@@ -123,10 +135,16 @@ class DiscordBot:
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
+<<<<<<< HEAD
     @staticmethod
     async def login(member):
         import texts.login_text as login_texts
 
+=======
+                
+    async def login(self, member):
+        import texts.login_text as login_texts
+>>>>>>> manudiv16-master
         logging.info("Enviando mensaje por privado para hacer login")
         name = member.nick
         await member.send(login_texts.send_message_login(name), delete_after=20)

@@ -35,26 +35,28 @@ class Firebase:
         doc.set(json)
         pass
 
-    def getUser(self, discord_id = None, username = None, discriminator = None):
+    def getUser(self, discord_id=None, username=None, discriminator=None):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
-            doc = todo_ref.document(str(discord_id)).get()
+            doc = todo_ref.document(discord_id).get()
             #
-            if doc.to_dict():
-                return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'], doc.to_dict()['group'], doc.to_dict()['email'])
+            return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'],
+                        doc.to_dict()['group'], doc.to_dict()['email'])
         else:
             for usr in todo_ref.stream():
-                if (username is not None and usr.to_dict()['username'] == username) and (discriminator is not None and discriminator == usr.to_dict()['discriminator']):
-                    return User(usr.to_dict()['username'], usr.to_dict()['discrminator'], usr.to_dict()['id'], usr.to_dict()['group'], usr.to_dict()['email'])
+                if (username is not None and usr.to_dict()['username'] == username) and (
+                        discriminator is not None and discriminator == usr.to_dict()['discriminator']):
+                    return User(usr.to_dict()['username'], usr.to_dict()['discrminator'], usr.to_dict()['id'],
+                                usr.to_dict()['group'], usr.to_dict()['email'])
 
         return False
-        
+
     def createOrUpdateGroup(self, group: Team):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
 
-        json = {'name':group.name, "members": group.members, "role_id": group.role_id}
+        json = {'name': group.group_name, "members": group.users, "role_id": group.role_id}
 
-        doc = todo_ref.document(group.name)
+        doc = todo_ref.document(group.group_name)
         doc.set(json)
 
     def getGroup(self, group_name):
@@ -73,9 +75,11 @@ class Firebase:
     def recoverInvitation(self, user_id, group_name):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
         for usr in todo_ref.stream():
-            if (usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name):
+
+            if usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name:
                 return (usr.id, usr.to_dict())
         return False
+
     def acceptInvitation(self, user_id, group_name):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
         invitation = self.recoverInvitation(user_id, group_name)
