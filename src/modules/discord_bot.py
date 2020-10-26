@@ -124,16 +124,9 @@ class DiscordBot:
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
-<<<<<<< HEAD
     @staticmethod
     async def login(member):
         import texts.login_text as login_texts
-
-=======
-                
-    async def login(self, member):
-        import texts.login_text as login_texts
->>>>>>> manudiv16-master
         logging.info("Enviando mensaje por privado para hacer login")
         name = member.nick
         await member.send(login_texts.send_message_login(name), delete_after=20)

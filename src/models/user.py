@@ -6,8 +6,4 @@ class User:
         self.discrminator = discrminator
         self.discord_id = discord_id
         self.group_name = group_name
-<<<<<<< HEAD
         self.email = email
-=======
-        self.email = email
->>>>>>> manudiv16-master
