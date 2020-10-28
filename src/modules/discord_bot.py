@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import logging, os
+import discord
 from discord.ext import commands as discord_commands, tasks
 # from discord.ext import commands as discord_commands
 import texts.help_texts as help_texts
@@ -40,13 +41,18 @@ class DiscordBot:
         await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
         channelId=DiscordBot.get_channel_id(ctx,'preguntas_participantes')
         channel = self.client.get_channel(channelId)
-        self.questions[self.question_num]=ctx.author
-        print(self.questions)
+        self.questions[self.question_num]=(ctx.author,question)
         await channel.send('#'+str(self.question_num)+'  >  '+question)
         self.question_num+=1
 
     async def reply_command(self,ctx,num,reply):
-        await self.questions[int(num)].send('La respuesta a tu pregunta fue:  'reply)
+        #TODO:check question existnce
+        msg = discord.Embed(title="Tu resspuesta ha llegado", color=0x00ff00)
+        msg.add_field(name="Pregunta", value=self.questions[int(num)][1], inline=False)
+        msg.add_field(name="Respuesta", value="hi2", inline=False)
+        # await self.questions[int(num)][0].send('La respuesta a tu pregunta fue:  '+reply)
+        await self.questions[int(num)][0].send(embed=msg)
+        del self.questions[int(num)]#a revisar porque puedes darle quizas 2 respuestas
 
     @staticmethod
     def get_channel_id(ctx,name=None):

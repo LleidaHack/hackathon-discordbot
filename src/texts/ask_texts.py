@@ -9,3 +9,7 @@ EMBED_ASK_MESSAGE = discord.Embed(
                 ¡Ey! tu pregunta ha sido enviada a la organizacion, en cuanto puedan te van a responder.
             """
         )
+EMBED_REPLY_MESSAGE = discord.Embed(
+            colour = discord.Colour.green(),
+            title = "Tu respuesta ya ha llegado"
+)
