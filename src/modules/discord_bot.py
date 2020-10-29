@@ -24,25 +24,35 @@ class DiscordBot:
         async def help(ctx):
             await self.help_command(ctx)
         @self.client.command()
-        async def ask(ctx,question):
+        async def ask(ctx,*question):
             await self.ask_command(ctx,question)
         @self.client.command()
-        async def reply(ctx,num,reply):
+        async def reply(ctx,num,*reply):
             await self.reply_command(ctx,num,reply)
         @self.client.command()
         async def create(ctx):
             await self.create_command(ctx)
         self.question_num=0
-
+        
 
         @self.client.event
         async def on_member_join(member):
             await self.login(member)
 
+        
+        # @tasks.loop(hours=1)
+        # async def wake_up_reminder(self,ctx):
+            # async with self.lock:
+                # await self.wake_up(ctx)
+
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
 
+    # def wake_up(self,ctx):
+        # id=DiscordBot.get_channel_id(ctx,'recordatorios')
+        # channel = self.client.get_channel(channelId)
+        # await channel.send('recordatorio')
 
     async def help_command(self, ctx):
         import texts.help_texts as texts
@@ -102,22 +112,31 @@ class DiscordBot:
 
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
-
-        pass
     
     async def ask_command(self,ctx,question):
-        import texts.ask_texts as ask_texts
+        import texts.ask_reply_texts as texts
         logging.info("Enviando pregunta")
-        await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
+        question=' '.join(str(i) for i in question)
+        await ctx.author.send(embed=texts.EMBED_ASK_MESSAGE)
         channelId=DiscordBot.get_channel_id(ctx,'preguntas_participantes')
         channel = self.client.get_channel(channelId)
-        self.questions[self.question_num]=ctx.author
-        print(self.questions)
+        self.questions[self.question_num]=(ctx.author,question)
         await channel.send('#'+str(self.question_num)+'  >  '+question)
         self.question_num+=1
 
     async def reply_command(self,ctx,num,reply):
-        await self.questions[int(num)].send('La respuesta a tu pregunta fue:  ' + reply)
+        import texts.ask_reply_texts as texts
+        #TODO:check question existnce
+        print(type(int))
+        if (not str(num).isdigit()) or (not int(num) in self.questions.keys()):
+            await ctx.send(embed=texts.REPLY_INDEX_ERR)
+        reply=' '.join(str(i) for i in reply)
+        msg = discord.Embed(title="Tu resspuesta ha llegado", color=0x00ff00)
+        msg.add_field(name="Pregunta", value=self.questions[int(num)][1], inline=False)
+        msg.add_field(name="Respuesta", value=reply, inline=False)
+        # await self.questions[int(num)][0].send('La respuesta a tu pregunta fue:  '+reply)
+        await self.questions[int(num)][0].send(embed=msg)
+        del self.questions[int(num)]#a revisar porque puedes darle quizas 2 respuestas
 
     @staticmethod
     def get_channel_id(ctx,name=None):
