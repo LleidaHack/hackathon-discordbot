@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from team import Team
 class WebUser:
     def __init__(self, accepted, birthDate, displayName, email, fullName, githubUrl, nickname):
         self.accepted = accepted
@@ -9,5 +8,3 @@ class WebUser:
         self.fullName = fullName
         self.githubUrl = githubUrl
         self.nickname = nickname
-        
-    

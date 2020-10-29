@@ -13,3 +13,9 @@ EMBED_REPLY_MESSAGE = discord.Embed(
             colour = discord.Colour.green(),
             title = "Tu respuesta ya ha llegado"
 )
+REPLY_INDEX_ERR =discord.Embed(
+            colour=discord.Colour.red(),
+            title="Error on reply",
+            description=" El indice introducido no es correcto o no existe."
+)
+NOT_VAlID_CHANNEL="Este comando no puede ser utilizado en este canal."

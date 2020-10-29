@@ -1,0 +1,4 @@
+qrcode
+firebase_admin
+python-dotenv
+discord
