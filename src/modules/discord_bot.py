@@ -41,6 +41,7 @@ class DiscordBot:
 
         self.question_num = 0
 
+
         @self.client.event
         async def on_member_join(member):
             await self.login(member)
@@ -48,6 +49,12 @@ class DiscordBot:
         @self.client.command()
         async def login(member, email: str):
             await self.login(member, email)
+        
+        # @tasks.loop(hours=1)
+        # async def wake_up_reminder(self,ctx):
+            # async with self.lock:
+                # await self.wake_up(ctx)
+
 
     def start(self):
         logging.info("Starting bot!")
@@ -62,6 +69,10 @@ class DiscordBot:
             await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
         else:
             pass
+    # def wake_up(self,ctx):
+        # id=DiscordBot.get_channel_id(ctx,'recordatorios')
+        # channel = self.client.get_channel(channelId)
+        # await channel.send('recordatorio')
 
     async def help_command(self, ctx):
         import texts.help_texts as texts
@@ -122,24 +133,42 @@ class DiscordBot:
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
 
-        pass
 
-    async def ask_command(self, ctx, question):
-        import texts.ask_texts as ask_texts
+    async def ask_command(self,ctx,question):
+        import texts.ask_reply_texts as texts
         logging.info("Enviando pregunta")
-        await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-        channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
+        question=' '.join(str(i) for i in question)
+        await ctx.author.send(embed=texts.EMBED_ASK_MESSAGE)
+        channelId=DiscordBot.get_channel_id(ctx,'preguntas_participantes')
         channel = self.client.get_channel(channelId)
-        self.questions[self.question_num] = ctx.author
-        print(self.questions)
-        await channel.send('#' + str(self.question_num) + '  >  ' + question)
-        self.question_num += 1
+        self.questions[self.question_num]=(ctx.author,question)
+        await channel.send('#'+str(self.question_num)+'  >  '+question)
+        self.question_num+=1
 
-    async def reply_command(self, ctx, num, reply):
-        await self.questions[int(num)].send('La respuesta a tu pregunta fue:  ' + reply)
+    async def reply_command(self,ctx,num,reply):
+        import texts.ask_reply_texts as texts
+        #TODO:check question existnce
+        print(type(int))
+        if (not str(num).isdigit()) or (not int(num) in self.questions.keys()):
+            await ctx.send(embed=texts.REPLY_INDEX_ERR)
+        reply=' '.join(str(i) for i in reply)
+        msg = discord.Embed(title="Tu resspuesta ha llegado", color=0x00ff00)
+        msg.add_field(name="Pregunta", value=self.questions[int(num)][1], inline=False)
+        msg.add_field(name="Respuesta", value=reply, inline=False)
+        # await self.questions[int(num)][0].send('La respuesta a tu pregunta fue:  '+reply)
+        await self.questions[int(num)][0].send(embed=msg)
+        del self.questions[int(num)]#a revisar porque puedes darle quizas 2 respuestas
 
     @staticmethod
     def get_channel_id(ctx, name=None):
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
+
+    @staticmethod
+    async def login(member):
+        import texts.login_text as login_texts
+        logging.info("Enviando mensaje por privado para hacer login")
+        name = member.nick
+        await member.send(login_texts.send_message_login(name), delete_after=20)
+        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)

@@ -7,5 +7,3 @@ class User:
         self.discord_id = discord_id
         self.group_name = group_name
         self.email = email
-        self.email = email
-
