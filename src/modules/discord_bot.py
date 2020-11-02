@@ -1,9 +1,11 @@
 #!/usr/bin/python3
-import logging, os
+import logging
+import os
+
 import discord
-from discord.ext import commands as discord_commands, tasks
+from discord.ext import commands as discord_commands
+
 from crud.firebase import Firebase
-from models.user import User
 from models.team import Team
 
 
@@ -12,43 +14,61 @@ class DiscordBot:
         logging.info("Reading bot config data")
         intents = discord.Intents.all()
 
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions = True, intents = intents)
+        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
         self.database = Firebase()
         logging.info("Reading bot functions")
 
-        self.questions={}
+        self.questions = {}
+
         @self.client.command()
         async def help(ctx):
             await self.help_command(ctx)
+
         @self.client.command()
-        async def ask(ctx,*question):
-            await self.ask_command(ctx,question)
+        async def ask(ctx, question):
+            await self.ask_command(ctx, question)
+
         @self.client.command()
-        async def reply(ctx,num,*reply):
-            await self.reply_command(ctx,num,reply)
+        async def reply(ctx, num, reply):
+            await self.reply_command(ctx, num, reply)
+
         @self.client.command()
         async def create(ctx):
             await self.create_command(ctx)
-        self.question_num=0
-        
+
+        self.question_num = 0
+
 
         @self.client.event
         async def on_member_join(member):
             await self.login(member)
 
+        @self.client.command()
+        async def login(member, email: str):
+            await self.login(member, email)
         
         # @tasks.loop(hours=1)
         # async def wake_up_reminder(self,ctx):
             # async with self.lock:
                 # await self.wake_up(ctx)
 
+
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
 
+    async def login(self, member, email):
+        import texts.login_text as login_texts
+        logging.info("Enviando mensaje por privado para hacer login")
+        await member.send(login_texts.send_message_login(member.author), delete_after=20)
+        user = self.database.recoverWebUser(email)
+        if user:
+            await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
+        else:
+            pass
     # def wake_up(self,ctx):
         # id=DiscordBot.get_channel_id(ctx,'recordatorios')
         # channel = self.client.get_channel(channelId)
@@ -69,7 +89,7 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
             return
-        if user.group_name != None or user.group_name != '':
+        if user.group_name is not None or user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
             return
@@ -79,7 +99,7 @@ class DiscordBot:
             await ctx.send(texts.SINTAXIX_ERROR)
             return
         group = self.database.getGroup(group_name=' '.join(command[1:]))
-        if not group:   
+        if not group:
             group = self.database.recoverWebGroup(' '.join(command[1:]))
         if group:
             logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
@@ -112,7 +132,8 @@ class DiscordBot:
 
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
-    
+
+
     async def ask_command(self,ctx,question):
         import texts.ask_reply_texts as texts
         logging.info("Enviando pregunta")
@@ -139,10 +160,11 @@ class DiscordBot:
         del self.questions[int(num)]#a revisar porque puedes darle quizas 2 respuestas
 
     @staticmethod
-    def get_channel_id(ctx,name=None):
+    def get_channel_id(ctx, name=None):
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
+
     @staticmethod
     async def login(member):
         import texts.login_text as login_texts
