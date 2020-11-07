@@ -22,7 +22,8 @@ class DiscordBot:
         logging.info("Reading bot functions")
 
         self.questions = {}
-
+        self.question_num = 0
+        self.user_registering = {}
         @self.client.command()
         async def help(ctx):
             await self.help_command(ctx)
@@ -39,22 +40,21 @@ class DiscordBot:
         async def create(ctx):
             await self.create_command(ctx)
 
-        self.question_num = 0
-
+        @self.client.command()
+        async def register(ctx):
+            await self.start_register(ctx.author)
 
         @self.client.event
         async def on_member_join(member):
-            await self.login(member)
+            import texts.login_text as login_texts
 
-        @self.client.command()
-        async def login(member, email: str):
-            await self.login(member, email)
-        
-        # @tasks.loop(hours=1)
-        # async def wake_up_reminder(self,ctx):
-            # async with self.lock:
-                # await self.wake_up(ctx)
+            await member.send(embed=login_texts.WELCOME_MESSAGE)
+            await self.start_register(member)
 
+        @self.client.listen('on_message')
+        async def on_message(message):
+            if message.author in self.user_registering:
+                logging.info("Email enviado")
 
     def start(self):
         logging.info("Starting bot!")
@@ -69,10 +69,6 @@ class DiscordBot:
             await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
         else:
             pass
-    # def wake_up(self,ctx):
-        # id=DiscordBot.get_channel_id(ctx,'recordatorios')
-        # channel = self.client.get_channel(channelId)
-        # await channel.send('recordatorio')
 
     async def help_command(self, ctx):
         import texts.help_texts as texts
@@ -165,10 +161,11 @@ class DiscordBot:
             if channel.name == name:
                 return channel.id
 
-    @staticmethod
-    async def login(member):
+    async def start_register(self, author):
         import texts.login_text as login_texts
-        logging.info("Enviando mensaje por privado para hacer login")
-        name = member.nick
-        await member.send(login_texts.send_message_login(name), delete_after=20)
-        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
+        self.user_registering[author] = 0
+        logging.info("Enviando mensaje de inicio de registro a " + str(author))
+
+        await author.send(login_texts.REGISTER_MESSAGE)
+
+        
