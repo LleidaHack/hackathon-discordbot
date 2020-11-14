@@ -11,14 +11,9 @@ from src.crud.firebase import Firebase
 from src.models.team import Team
 from src.models.user import User
 
-
-class DB:
-    __database = Firebase()
-
-    @staticmethod
-    def get() -> Firebase:
-        return DB.__database
-
+DB = Firebase()
+# at least:
+# DB = lambda: Firebase()
 
 class DiscordBot:
     def __init__(self):
@@ -73,7 +68,7 @@ class DiscordBot:
     async def create_command(self, ctx):
         import src.texts.create_texts as texts
 
-        user = DB.get().getUser(discord_id=ctx.message.author.id)
+        user = DB.getUser(discord_id=ctx.message.author.id)
         if not user:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
@@ -87,9 +82,9 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] La sintaxis es incorrecta")
             await ctx.send(texts.SINTAXIX_ERROR)
             return
-        group = DB.get().getGroup(group_name=' '.join(command[1:]))
+        group = DB.getGroup(group_name=' '.join(command[1:]))
         if not group:
-            group = DB.get().recoverWebGroup(' '.join(command[1:]))
+            group = DB.recoverWebGroup(' '.join(command[1:]))
         if group:
             logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
             await ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
@@ -97,7 +92,7 @@ class DiscordBot:
         await ctx.send(texts.STARTING_CREATE_GROUP)
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
         logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
-        DB.get().createOrUpdateGroup(group)
+        DB.createOrUpdateGroup(group)
         guild = ctx.guild
         logging.info("[COMMAND CREATE - OK] Creando rol")
 
@@ -151,12 +146,12 @@ class DiscordBot:
         await member.send(login_texts.send_message_login(name), delete_after=20)
         await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
 
-    def invite_command(self, ctx: Context):
+    async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
         from typing import Union
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
-        team: Union[Team, bool] = DB.get().getGroup(DB.get().getUser(ctx.author.id).group_name)
+        team: Union[Team, bool] = DB.getGroup(DB.getUser(ctx.author.id).group_name)
         if not team:
             logging.error(f"{ctx.author.name} no tiene grupo")
             await ctx.send(txt.NOT_IN_GROUP)
@@ -166,7 +161,7 @@ class DiscordBot:
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people: List[User] = list(map(lambda x: DB.get().getUser(username=x[0], discriminator=x[1]), people))
+        people: List[User] = list(map(lambda x: DB.getUser(username=x[0], discriminator=x[1]), people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) < 4:
             logging.error(

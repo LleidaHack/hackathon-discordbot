@@ -34,7 +34,7 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
 
         json = {'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
-                "email": user.email, "group": user.group}
+                "email": user.email, "group": user.group_name}
         doc = todo_ref.document(user.discord_id)
         doc.set(json)
 
@@ -53,6 +53,12 @@ class Firebase:
                                 usr.to_dict()['group'], usr.to_dict()['email'])
 
         return False
+
+    def get_user_from_id(self, discord_id):
+        return self.getUser(discord_id=discord_id)
+
+    def get_user_from_name(self, username, discriminator):
+        return self.getUser(username=username, discriminator=discriminator)
 
     def createOrUpdateGroup(self, group: Team) -> None:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
