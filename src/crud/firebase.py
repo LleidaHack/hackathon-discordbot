@@ -54,9 +54,9 @@ class Firebase:
     def createOrUpdateGroup(self, group: Team):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
 
-        json = {'name': group.group_name, "members": group.users, "role_id": group.role_id}
+        json = {'name': group.name, "members": group.members, "role_id": group.role_id}
 
-        doc = todo_ref.document(group.group_name)
+        doc = todo_ref.document(group.name)
         doc.set(json)
 
     def getGroup(self, group_name):
