@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from dotenv import load_dotenv
-from modules.discord_bot import DiscordBot
+from src.modules.discord_bot import DiscordBot
 import logging
 
 if __name__ == "__main__":

@@ -3,10 +3,11 @@ import logging
 import os
 
 import discord
-from crud.firebase import Firebase
 from discord.ext import commands as discord_commands
 from discord.ext.commands import Context
-from models.team import Team
+
+from src.crud.firebase import Firebase
+from src.models.team import Team
 
 
 class DB:
@@ -61,14 +62,14 @@ class DiscordBot:
         self.client.run(self.token)
 
     async def help_command(self, ctx):
-        import texts.help_texts as texts
+        import src.texts.help_texts as texts
 
         logging.info("Enviando mensaje de ayuda")
         await ctx.send(texts.GLOBAL_HELP_MESSAGE, delete_after=20)
         await ctx.author.send(embed=texts.EMBED_HELP_MESSAGE)
 
     async def create_command(self, ctx):
-        import texts.create_texts as texts
+        import src.texts.create_texts as texts
 
         user = DB.get().getUser(discord_id=ctx.message.author.id)
         if not user:
@@ -122,7 +123,7 @@ class DiscordBot:
         pass
 
     async def ask_command(self, ctx, question):
-        import texts.ask_texts as ask_texts
+        import src.texts.ask_texts as ask_texts
         logging.info("Enviando pregunta")
         await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
         channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
@@ -142,17 +143,18 @@ class DiscordBot:
                 return channel.id
 
     async def login(self, member):
-        import texts.login_text as login_texts
+        import src.texts.login_text as login_texts
         logging.info("Enviando mensaje por privado para hacer login")
         name = member.nick
         await member.send(login_texts.send_message_login(name), delete_after=20)
         await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
 
     def invite_command(self, ctx: Context):
-        from texts.invite_texts as txt
-        username = {ctx.author.name}
+        import src.texts.invite_texts as txt
+        from typing import Union
+        username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
-        team: Team = DB.get().getGroup(DB.get().getUser(ctx.author.id).group_name)
+        team: Union[Team, bool] = DB.get().getGroup(DB.get().getUser(ctx.author.id).group_name)
         if not team:
             logging.error(f"{ctx.author.name} no tiene grupo")
             await ctx.send(txt.NOT_IN_GROUP)
@@ -175,9 +177,8 @@ class DiscordBot:
             logging.error(f"Not found role {team.name}")
             return
         for p in people:
-            team.add_user(p)
+            team.add_user(p.discord_id)
             member = guild.get_member(p.discord_id)
             logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
             await member.add_roles(role)
             await ctx.send(f"¡{member.name} añadido al grupo {role.name}!")
-
