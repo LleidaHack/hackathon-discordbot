@@ -171,6 +171,10 @@ class DiscordBot:
                 f"Usuario {username} quiere añadir al grupo {team.name} {len(people)} personas pero ya son {team.size()}")
             await ctx.send(txt.TEAM_OVERFLOW)
             return
+        for already_member in filter(lambda x: x.group_name is not None, people):
+            logging.info(f"{already_member} está ya en otro grupo: {already_member.group_name}")
+            await ctx.send(txt.ALREADY_IN_A_GROUP(already_member.username, already_member.group_name))
+        people = list(filter(lambda x: x.group_name is None, people))
         guild = ctx.guild
         role = discord.utils.get(guild.roles, name=team.name)
         if not role:
@@ -181,4 +185,4 @@ class DiscordBot:
             member = guild.get_member(p.discord_id)
             logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
             await member.add_roles(role)
-            await ctx.send(f"¡{member.name} añadido al grupo {role.name}!")
+            await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
