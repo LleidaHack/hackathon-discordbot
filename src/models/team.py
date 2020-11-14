@@ -4,3 +4,9 @@ class Team:
         self.name = name
         self.members = users
         self.role_id = role_id
+
+    def add_user(self, user):
+        self.members.append(user)
+
+    def size(self):
+        return len(self.members)
