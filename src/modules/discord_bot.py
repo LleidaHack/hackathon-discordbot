@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import logging
 import os
+from typing import List
 
 import discord
 from discord.ext import commands as discord_commands
@@ -8,6 +9,7 @@ from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
 from src.models.team import Team
+from src.models.user import User
 
 
 class DB:
@@ -164,8 +166,8 @@ class DiscordBot:
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people = list(map(lambda x: DB.get().getUser(username=x[0], discriminator=x[1]), people))
-        logging.info(f"Gente encontrada: {[p.name for p in people]}")
+        people: List[User] = list(map(lambda x: DB.get().getUser(username=x[0], discriminator=x[1]), people))
+        logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) < 4:
             logging.error(
                 f"Usuario {username} quiere añadir al grupo {team.name} {len(people)} personas pero ya son {team.size()}")
