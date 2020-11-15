@@ -4,14 +4,18 @@ import os
 from typing import List
 
 import discord
+from discord import Member
 from discord.ext import commands as discord_commands
 from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
+from src.models.invitation import Invitation
 from src.models.team import Team
-from src.models.user import User
+from src.models.user import User as ModelUser
 
 DB = Firebase()
+
+
 # at least:
 # DB = lambda: Firebase()
 
@@ -48,6 +52,10 @@ class DiscordBot:
         async def invite(ctx):
             await self.invite_command(ctx)
 
+        @self.client.command()
+        async def join(ctx):
+            await self.join_command(ctx)
+
         self.question_num = 0
 
         @self.client.event
@@ -68,7 +76,7 @@ class DiscordBot:
     async def create_command(self, ctx):
         import src.texts.create_texts as texts
 
-        user = DB.getUser(discord_id=ctx.message.author.id)
+        user = DB.get_user(discord_id=ctx.message.author.id)
         if not user:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
@@ -82,9 +90,9 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] La sintaxis es incorrecta")
             await ctx.send(texts.SINTAXIX_ERROR)
             return
-        group = DB.getGroup(group_name=' '.join(command[1:]))
+        group = DB.get_group(group_name=' '.join(command[1:]))
         if not group:
-            group = DB.recoverWebGroup(' '.join(command[1:]))
+            group = DB.recover_web_group(' '.join(command[1:]))
         if group:
             logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
             await ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
@@ -92,7 +100,7 @@ class DiscordBot:
         await ctx.send(texts.STARTING_CREATE_GROUP)
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
         logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
-        DB.createOrUpdateGroup(group)
+        DB.create_or_update_group(group)
         guild = ctx.guild
         logging.info("[COMMAND CREATE - OK] Creando rol")
 
@@ -151,17 +159,17 @@ class DiscordBot:
         from typing import Union
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
-        team: Union[Team, bool] = DB.getGroup(DB.getUser(ctx.author.id).group_name)
+        team: Union[Team, bool] = DB.get_group(DB.get_user(ctx.author.id).group_name)
         if not team:
             logging.error(f"{ctx.author.name} no tiene grupo")
             await ctx.send(txt.NOT_IN_GROUP)
             return
         people = list(map(lambda x: x.split('#'), ctx.message.content.split()[1:]))
+        people: List[ModelUser] = list(map(lambda x: DB.get_user(username=x[0], discriminator=x[1]), people))
         if any(people):
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people: List[User] = list(map(lambda x: DB.getUser(username=x[0], discriminator=x[1]), people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) < 4:
             logging.error(
@@ -178,8 +186,45 @@ class DiscordBot:
             logging.error(f"Not found role {team.name}")
             return
         for p in people:
-            team.add_user(p.discord_id)
-            member = guild.get_member(p.discord_id)
-            logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
-            await member.add_roles(role)
-            await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
+            member: Member = guild.get_member(p.discord_id)
+            DB.create_invitation(p.discord_id, team.name)
+            await member.send(
+                f"Has sido invitado al grupo {team.name}\nPara formar parte del grupo usa el comando eps!join {team.name}")
+
+    async def join_command(self, ctx):
+        from src.modules.facades import ContextFacade
+        import src.texts.join_texts as txt
+        fac: ContextFacade = ContextFacade(ctx)
+        logging.info(f"join command por {fac.get_author().name}")
+        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
+        if user is None:
+            logging.error(f"User {fac.get_author().name} no registrado.")
+            ctx.send(txt.USER_NOT_REGISTERED)
+            return
+        elif user.group_name is not None:
+            logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
+            ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
+        team_name = fac.get_message().split()[1]
+        invitation = DB.get_invitation(user.discord_id, team_name)
+        if not invitation:
+            logging.error(f"User {fac.get_author().name} no tiene invitaciones del grupo {team_name}.")
+            ctx.send(txt.NOT_ALLOWED_TEAM(team_name))
+            return
+        _, invitation = invitation
+        if invitation.group_name != team_name:
+            logging.error(f"Illegal Statement: {team_name} must be {invitation.group_name}")
+            ctx.send(txt.ERROR_SERVER)
+            return
+        logging.info(f"{fac.get_author().name} invitation del grupo {team_name}")
+        DB.accept_invitation(invitation.user_id, invitation.group_name)
+        team = DB.get_group(invitation.group_name)
+        team.add_user(user.discord_id)
+        DB.create_or_update_group(team)
+        user.group_name = team_name
+        DB.create_or_update_user(user)
+        guild = ctx.guild
+        role = discord.utils.get(guild.roles, name=team.name)
+        member = guild.get_member(user.discord_id)
+        logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
+        await member.add_roles(role)
+        await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
