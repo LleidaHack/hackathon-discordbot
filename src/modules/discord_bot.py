@@ -7,7 +7,7 @@ from discord.ext import commands as discord_commands
 
 from crud.firebase import Firebase
 from models.team import Team
-
+from models.user import User
 
 class DiscordBot:
     def __init__(self):
@@ -53,22 +53,17 @@ class DiscordBot:
 
         @self.client.listen('on_message')
         async def on_message(message):
-            if message.author in self.user_registering:
+            if message.author in self.user_registering and not message.guild and not message.author.bot:
                 logging.info("Email enviado")
+                await self.login(message.author, message.content)
+                logging.info("Email checked")
+                
 
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
 
-    async def login(self, member, email):
-        import texts.login_text as login_texts
-        logging.info("Enviando mensaje por privado para hacer login")
-        await member.send(login_texts.send_message_login(member.author), delete_after=20)
-        user = self.database.recoverWebUser(email)
-        if user:
-            await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
-        else:
-            pass
+
 
     async def help_command(self, ctx):
         import texts.help_texts as texts
@@ -105,30 +100,32 @@ class DiscordBot:
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
         logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
         self.database.createOrUpdateGroup(group)
-        guild = ctx.guild
-        logging.info("[COMMAND CREATE - OK] Creando rol")
 
-        await guild.create_role(name=group.name)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        role = await  self.create_group_on_server(ctx.guild, group)
+
+
         logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
         await ctx.message.author.add_roles(role)
+        logging.info("[COMMAND CREATE - OK] Informando all Ok")
+        await ctx.send(texts.CREATED_GROUP)
 
+    async def create_group_on_server(self, guild, group):
+        await guild.create_role(name=group.group_name)
+        role = discord.utils.get(guild.roles, name=group.group_name)
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
             role: discord.PermissionOverwrite(read_messages=True)
         }
-        logging.info("[COMMAND CREATE - OK] Localizando categoria de equipos")
+        logging.info("[CREATE GROUP - OK] Localizando categoria de equipos")
 
         for cat in guild.categories:
             if str(cat.id) == os.getenv('TEAMS_CATEGORY_ID'):
-                logging.info("[COMMAND CREATE - OK] Creando canales de chat y voz")
-                await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
-                await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
+                logging.info("[CREATE GROUP - OK] Creando canales de chat y voz")
+                await guild.create_text_channel(group.group_name, overwrites=overwrites, category=cat)
+                await guild.create_voice_channel(group.group_name, overwrites=overwrites, category=cat)
                 break
 
-        logging.info("[COMMAND CREATE - OK] Informando all Ok")
-        await ctx.send(texts.CREATED_GROUP)
-
+        return role
 
     async def ask_command(self,ctx,question):
         import texts.ask_reply_texts as texts
@@ -163,9 +160,56 @@ class DiscordBot:
 
     async def start_register(self, author):
         import texts.login_text as login_texts
-        self.user_registering[author] = 0
-        logging.info("Enviando mensaje de inicio de registro a " + str(author))
+        user_discord = self.database.getUser(discord_id=author.id)
+        if not user_discord:
+            logging.info("Enviando mensaje de inicio de registro a " + str(author))
 
-        await author.send(login_texts.REGISTER_MESSAGE)
+            await author.send(login_texts.REGISTER_MESSAGE)
+            self.user_registering[author] = 0
+        else:
+            #send message already registrado
+            pass
+    async def login(self, user, email):
+        import texts.login_text as login_texts
+        logging.info("Email test")
+        web_user, group = self.database.recoverWebGroupByUser(email)
+        if web_user:
+            logging.info("Usuario localizado")
+            discord_user = self.database.getUser(email=email)
+            if discord_user:
+                await user.send(login_texts.REGISTER_ALREADY_REGISTER)
+                pass
+            else:
+                guild = self.client.get_guild(int(os.getenv('GUILD')))
+                member = guild.get_member(user.id)
+                if guild:
+                    if group:
+                        discord_group = self.database.getGroup(group.group_name)
+                        if not discord_group:
+                            await  self.create_group_on_server(guild, group)
+                            discord_group = group
 
-        
+                        role = discord.utils.get(guild.roles, name=group.group_name)
+                        discord_group.members.append(user.id)
+                        self.database.createOrUpdateGroup(discord_group)
+                        discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
+                        logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
+                        await member.add_roles(role)
+                        await user.send(login_texts.USER_HAS_GROUP)
+
+                    else:
+                        discord_user = User(user.name, user.discriminator, user.id, '', email)
+                        await user.send(login_texts.USER_NO_GROUP)
+
+
+                    self.database.createOrUpdateUser(discord_user)
+                    # Creacion usuario
+                    await user.send(login_texts.REGISTER_OK)
+                else:
+                    print("ERROR CONFIG")
+                    print(os.getenv('GUILD'))
+        else:
+            logging.info("No se ha encontrado al usuario")
+            await user.send(login_texts.REGISTER_KO)
+
+            pass

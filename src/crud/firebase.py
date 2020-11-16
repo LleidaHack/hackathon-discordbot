@@ -1,11 +1,12 @@
 import os
+import logging
 
 from firebase_admin import credentials, firestore, initialize_app
 
 from models.team import Team
 from models.user import User
 from models.webuser import WebUser
-
+import re
 
 class Firebase:
     def __init__(self):
@@ -14,6 +15,8 @@ class Firebase:
         self.db = firestore.client()
 
     def recoverWebUser(self, email):
+        logging.info("FIREBASE - Looking for "+  email)
+
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
         for usr in todo_ref.stream():
             if usr.to_dict()['email'] == email:
@@ -29,16 +32,28 @@ class Firebase:
             return Team(doc.to_dict()['name'])
         return False
 
+    def recoverWebGroupByUser(self, email):
+        users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
+        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
+        for grp in todo_ref.stream():
+            members = grp.to_dict()['members']
+            for member in members:
+                user = users_ref.document(member.id).get().to_dict()
+                if user['email'] == email:
+                    return WebUser(user['accepted'], user['birthDate'], user['displayName'],
+                               user['email'], user['fullName'], user['githubUrl'],
+                               user['nickname']), Team(grp.to_dict()['name'])
+        return self.recoverWebUser(email), None
     def createOrUpdateUser(self, user: User):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
 
         json = {'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
-                "email": user.email, "group": user.group}
-        doc = todo_ref.document(user.discord_id)
+                "email": user.email, "group": user.group_name}
+        doc = todo_ref.document(str(user.discord_id))
         doc.set(json)
         pass
 
-    def getUser(self, discord_id=None, username=None, discriminator=None):
+    def getUser(self, discord_id=None, username=None, discriminator=None, email = None):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(discord_id).get()
@@ -48,8 +63,8 @@ class Firebase:
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (
-                        discriminator is not None and discriminator == usr.to_dict()['discriminator']):
-                    return User(usr.to_dict()['username'], usr.to_dict()['discrminator'], usr.to_dict()['id'],
+                        discriminator is not None and discriminator == usr.to_dict()['discriminator']) or usr.to_dict()['email'] == email:
+                    return User(usr.to_dict()['username'], usr.to_dict()['discriminator'], usr.to_dict()['id'],
                                 usr.to_dict()['group'], usr.to_dict()['email'])
 
         return False
@@ -57,7 +72,7 @@ class Firebase:
     def createOrUpdateGroup(self, group: Team):
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
 
-        json = {'name': group.group_name, "members": group.users, "role_id": group.role_id}
+        json = {'name': group.group_name, "members": group.members, "role_id": group.role_id}
 
         doc = todo_ref.document(group.group_name)
         doc.set(json)
