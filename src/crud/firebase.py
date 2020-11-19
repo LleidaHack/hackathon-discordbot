@@ -61,14 +61,14 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
-            return User(doc.to_dict()['username'], doc.to_dict()['discriminator'], doc.to_dict()['id'],
+            return User(doc.to_dict()['username'], doc.to_dict()['discriminator'], doc.to_dict()['discord_id'],
                     doc.to_dict()['group'], doc.to_dict()['email']) if doc.to_dict() else False
 
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (
                         discriminator is not None and discriminator == usr.to_dict()['discriminator']) or usr.to_dict()['email'] == email:
-                    return User(usr.to_dict()['username'], usr.to_dict()['discriminator'], usr.to_dict()['id'],
+                    return User(usr.to_dict()['username'], usr.to_dict()['discriminator'], usr.to_dict()['discord_id'],
                                 usr.to_dict()['group'], usr.to_dict()['email'])
 
         return False
