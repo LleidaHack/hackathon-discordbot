@@ -237,8 +237,10 @@ class DiscordBot:
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
 
-    async def start_register(self, author):
+    async def start_register(self, author, ctx = None):
         import src.texts.login_text as login_texts
+        if ctx:
+            await ctx.send(login_texts.PM_SENDED)
         user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
@@ -246,7 +248,7 @@ class DiscordBot:
             await author.send(login_texts.REGISTER_MESSAGE)
             self.user_registering[author] = 0
         else:
-            #send message already registrado
+            author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
     async def login(self, user, email):
         import src.texts.login_text as login_texts

@@ -61,7 +61,7 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
-            return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'],
+            return User(doc.to_dict()['username'], doc.to_dict()['discriminator'], doc.to_dict()['id'],
                     doc.to_dict()['group'], doc.to_dict()['email']) if doc.to_dict() else False
 
         else:
