@@ -95,7 +95,7 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
             return
-        if user.group_name is not None or user.group_name != '':
+        if user.group_name is not None and user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
             return
