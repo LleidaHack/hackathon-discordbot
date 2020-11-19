@@ -60,7 +60,7 @@ class Firebase:
     def get_user(self, discord_id=None, username=None, discriminator=None) -> Union[User, bool]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
-            doc = todo_ref.document(discord_id).get()
+            doc = todo_ref.document(str(discord_id)).get()
             #
             return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'],
                         doc.to_dict()['group'], doc.to_dict()['email'])
