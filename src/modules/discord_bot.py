@@ -58,13 +58,23 @@ class DiscordBot:
 
         self.question_num = 0
 
-        @self.client.event
-        async def on_member_join(member):
-            await self.login(member)
 
         @self.client.command()
         async def login(ctx):
-            await self.login(ctx.author)
+            await self.start_register(ctx.author)
+
+        @self.client.event
+        async def on_member_join(member):
+            import texts.login_text as login_texts
+            await member.send(embed=login_texts.WELCOME_MESSAGE)
+            await self.start_register(member)
+
+        @self.client.listen('on_message')
+        async def on_message(message):
+            if message.author in self.user_registering and not message.guild and not message.author.bot:
+                logging.info("Email enviado")
+                await self.login(message.author, message.content)
+                logging.info("Email checked")
 
     def start(self):
         logging.info("Starting bot!")
@@ -151,13 +161,6 @@ class DiscordBot:
             if channel.name == name:
                 return channel.id
 
-    async def login(self, member):
-        import src.texts.login_text as login_texts
-        logging.info("Enviando mensaje por privado para hacer login")
-        name = member.nick
-        await member.send(login_texts.send_message_login(name), delete_after=20)
-        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
-
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
         from typing import Union
@@ -232,3 +235,60 @@ class DiscordBot:
         logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
+
+
+    async def start_register(self, author):
+        import texts.login_text as login_texts
+        user_discord = self.database.getUser(discord_id=author.id)
+        if not user_discord:
+            logging.info("Enviando mensaje de inicio de registro a " + str(author))
+
+            await author.send(login_texts.REGISTER_MESSAGE)
+            self.user_registering[author] = 0
+        else:
+            #send message already registrado
+            pass
+    async def login(self, user, email):
+        import texts.login_text as login_texts
+        logging.info("Email test")
+        web_user, group = self.database.recover_web_group_by_user(email)
+        if web_user:
+            logging.info("Usuario localizado")
+            discord_user = self.database.getUser(email=email)
+            if discord_user:
+                await user.send(login_texts.REGISTER_ALREADY_REGISTER)
+                pass
+            else:
+                guild = self.client.get_guild(int(os.getenv('GUILD')))
+                member = guild.get_member(user.id)
+                if guild:
+                    if group:
+                        discord_group = self.database.getGroup(group.group_name)
+                        if not discord_group:
+                            await  self.create_group_on_server(guild, group)
+                            discord_group = group
+
+                        role = discord.utils.get(guild.roles, name=group.group_name)
+                        discord_group.members.append(user.id)
+                        self.database.createOrUpdateGroup(discord_group)
+                        discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
+                        logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
+                        await member.add_roles(role)
+                        await user.send(login_texts.USER_HAS_GROUP)
+
+                    else:
+                        discord_user = User(user.name, user.discriminator, user.id, '', email)
+                        await user.send(login_texts.USER_NO_GROUP)
+
+
+                    self.database.createOrUpdateUser(discord_user)
+                    # Creacion usuario
+                    await user.send(login_texts.REGISTER_OK)
+                else:
+                    print("ERROR CONFIG")
+                    print(os.getenv('GUILD'))
+        else:
+            logging.info("No se ha encontrado al usuario")
+            await user.send(login_texts.REGISTER_KO)
+
+            pass

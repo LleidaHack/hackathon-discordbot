@@ -1,4 +1,6 @@
 import os
+import logging
+
 from typing import Union, Tuple, Dict, Optional
 
 from firebase_admin import credentials, firestore, initialize_app
@@ -11,9 +13,10 @@ from src.models.webuser import WebUser
 
 class Firebase:
     def __init__(self):
-        self.cred = credentials.Certificate("src\certificate.json")
+        self.cred = credentials.Certificate("src/certificate.json")
         self.default_app = initialize_app(self.cred)
         self.db = firestore.client()
+
 
     def recover_web_user(self, email) -> Union[WebUser, bool]:
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
@@ -31,6 +34,19 @@ class Firebase:
             return Team(doc.to_dict()['name'])
         return False
 
+    def recoverWebGroupByUser(self, email):
+        users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
+        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
+        for grp in todo_ref.stream():
+            members = grp.to_dict()['members']
+            for member in members:
+                user = users_ref.document(member.id).get().to_dict()
+                if user['email'] == email:
+                    return WebUser(user['accepted'], user['birthDate'], user['displayName'],
+                               user['email'], user['fullName'], user['githubUrl'],
+                               user['nickname']), Team(grp.to_dict()['name'])
+        return self.recoverWebUser(email), None
+
     def create_or_update_user(self, user: User) -> None:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
 
@@ -39,6 +55,7 @@ class Firebase:
         "email": user.email, "group": user.group_name}"""
         doc = todo_ref.document(user.discord_id)
         doc.set(json)
+
 
     def get_user(self, discord_id=None, username=None, discriminator=None) -> Union[User, bool]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
@@ -50,14 +67,15 @@ class Firebase:
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (
-                        discriminator is not None and discriminator == usr.to_dict()['discriminator']):
-                    return User(usr.to_dict()['username'], usr.to_dict()['discrminator'], usr.to_dict()['id'],
+                        discriminator is not None and discriminator == usr.to_dict()['discriminator']) or usr.to_dict()['email'] == email:
+                    return User(usr.to_dict()['username'], usr.to_dict()['discriminator'], usr.to_dict()['id'],
                                 usr.to_dict()['group'], usr.to_dict()['email'])
 
         return False
 
     def get_user_from_id(self, discord_id):
         return self.get_user(discord_id=discord_id)
+
 
     def get_user_from_name(self, username, discriminator):
         return self.get_user(username=username, discriminator=discriminator)
