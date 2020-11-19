@@ -238,7 +238,7 @@ class DiscordBot:
 
 
     async def start_register(self, author):
-        import texts.login_text as login_texts
+        import src.texts.login_text as login_texts
         user_discord = self.database.getUser(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
@@ -249,7 +249,7 @@ class DiscordBot:
             #send message already registrado
             pass
     async def login(self, user, email):
-        import texts.login_text as login_texts
+        import src.texts.login_text as login_texts
         logging.info("Email test")
         web_user, group = self.database.recover_web_group_by_user(email)
         if web_user:
