@@ -57,7 +57,7 @@ class Firebase:
         doc.set(json)
 
 
-    def get_user(self, discord_id=None, username=None, discriminator=None) -> Union[User, bool]:
+    def get_user(self, discord_id=None, username=None, discriminator=None, email=None) -> Union[User, bool]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
