@@ -66,7 +66,7 @@ class DiscordBot:
 
         @self.client.event
         async def on_member_join(member):
-            import texts.login_text as login_texts
+            import src.texts.login_text as login_texts
             await member.send(embed=login_texts.WELCOME_MESSAGE)
             await self.start_register(member)
 
