@@ -61,10 +61,10 @@ class DiscordBot:
         @self.client.event
         async def on_member_join(member):
             await self.login(member)
-            
+
         @self.client.command()
         async def login(ctx):
-            await self.login(ctx.member)
+            await self.login(ctx.author)
 
     def start(self):
         logging.info("Starting bot!")
