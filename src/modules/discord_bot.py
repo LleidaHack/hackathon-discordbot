@@ -271,13 +271,13 @@ class DiscordBot:
                         role = discord.utils.get(guild.roles, name=group.group_name)
                         discord_group.members.append(user.id)
                         DB.create_or_update_group(discord_group)
-                        discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
+                        discord_user = ModelUser(user.name, user.discriminator, user.id, group.group_name,email)
                         logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
                         await member.add_roles(role)
                         await user.send(login_texts.USER_HAS_GROUP)
 
                     else:
-                        discord_user = User(user.name, user.discriminator, user.id, '', email)
+                        discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
                         await user.send(login_texts.USER_NO_GROUP)
 
 
