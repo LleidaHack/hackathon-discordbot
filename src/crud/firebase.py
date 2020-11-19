@@ -63,7 +63,7 @@ class Firebase:
             doc = todo_ref.document(str(discord_id)).get()
             #
             return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'],
-                        doc.to_dict()['group'], doc.to_dict()['email'])
+                        doc.to_dict()['group'], doc.to_dict()['email']) if doc else False
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (
