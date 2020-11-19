@@ -34,7 +34,7 @@ class Firebase:
             return Team(doc.to_dict()['name'])
         return False
 
-    def recoverWebGroupByUser(self, email):
+    def recover_web_group_by_user(self, email):
         users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         for grp in todo_ref.stream():
@@ -45,7 +45,7 @@ class Firebase:
                     return WebUser(user['accepted'], user['birthDate'], user['displayName'],
                                user['email'], user['fullName'], user['githubUrl'],
                                user['nickname']), Team(grp.to_dict()['name'])
-        return self.recoverWebUser(email), None
+        return self.recover_web_user(email), None
 
     def create_or_update_user(self, user: User) -> None:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
@@ -61,9 +61,9 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
-            #
             return User(doc.to_dict()['username'], doc.to_dict()['discrminator'], doc.to_dict()['id'],
-                        doc.to_dict()['group'], doc.to_dict()['email']) if doc else False
+                    doc.to_dict()['group'], doc.to_dict()['email']) if doc.to_dict() else False
+
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (

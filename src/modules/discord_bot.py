@@ -58,7 +58,7 @@ class DiscordBot:
 
         self.question_num = 0
 
-
+        self.user_registering = {}
         @self.client.command()
         async def login(ctx):
             await self.start_register(ctx.author)
