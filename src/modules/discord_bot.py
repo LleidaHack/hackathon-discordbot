@@ -292,3 +292,4 @@ class DiscordBot:
             await user.send(login_texts.REGISTER_KO)
 
             pass
+        self.user_registering.pop(user)
