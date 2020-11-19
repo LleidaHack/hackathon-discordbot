@@ -28,7 +28,6 @@ class DiscordBot:
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
-        self.database = Firebase()
         logging.info("Reading bot functions")
 
         self.questions = {}
@@ -240,7 +239,7 @@ class DiscordBot:
 
     async def start_register(self, author):
         import src.texts.login_text as login_texts
-        user_discord = self.database.getUser(discord_id=author.id)
+        user_discord = DB.getUser(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
 
@@ -252,10 +251,10 @@ class DiscordBot:
     async def login(self, user, email):
         import src.texts.login_text as login_texts
         logging.info("Email test")
-        web_user, group = self.database.recover_web_group_by_user(email)
+        web_user, group = DB.recover_web_group_by_user(email)
         if web_user:
             logging.info("Usuario localizado")
-            discord_user = self.database.getUser(email=email)
+            discord_user = DB.getUser(email=email)
             if discord_user:
                 await user.send(login_texts.REGISTER_ALREADY_REGISTER)
                 pass
@@ -264,14 +263,14 @@ class DiscordBot:
                 member = guild.get_member(user.id)
                 if guild:
                     if group:
-                        discord_group = self.database.getGroup(group.group_name)
+                        discord_group = DB.getGroup(group.group_name)
                         if not discord_group:
                             await  self.create_group_on_server(guild, group)
                             discord_group = group
 
                         role = discord.utils.get(guild.roles, name=group.group_name)
                         discord_group.members.append(user.id)
-                        self.database.createOrUpdateGroup(discord_group)
+                        DB.createOrUpdateGroup(discord_group)
                         discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
                         logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
                         await member.add_roles(role)
