@@ -30,9 +30,7 @@ class Firebase:
     def recover_web_group(self, name) -> Union[Team, bool]:
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         doc = todo_ref.document(name).get()
-        if doc:
-            return Team(doc.to_dict()['name'])
-        return False
+        return Team(doc.to_dict()['name']) if doc.to_dict() else False
 
     def recover_web_group_by_user(self, email):
         users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
