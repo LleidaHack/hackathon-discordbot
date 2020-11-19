@@ -53,7 +53,7 @@ class Firebase:
         json = user.__dict__
         """{'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
         "email": user.email, "group": user.group_name}"""
-        doc = todo_ref.document(user.discord_id)
+        doc = todo_ref.document(str(user.discord_id))
         doc.set(json)
 
 
