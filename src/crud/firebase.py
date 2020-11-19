@@ -52,7 +52,7 @@ class Firebase:
 
         json = user.__dict__
         """{'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
-        "email": user.email, "group": user.group_name}"""
+        "email": user.email, "group_name": user.group_name}"""
         doc = todo_ref.document(str(user.discord_id))
         doc.set(json)
 
@@ -62,14 +62,14 @@ class Firebase:
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
             return User(doc.to_dict()['username'], doc.to_dict()['discriminator'], doc.to_dict()['discord_id'],
-                    doc.to_dict()['group'], doc.to_dict()['email']) if doc.to_dict() else False
+                    doc.to_dict()['group_name'], doc.to_dict()['email']) if doc.to_dict() else False
 
         else:
             for usr in todo_ref.stream():
                 if (username is not None and usr.to_dict()['username'] == username) and (
                         discriminator is not None and discriminator == usr.to_dict()['discriminator']) or usr.to_dict()['email'] == email:
                     return User(usr.to_dict()['username'], usr.to_dict()['discriminator'], usr.to_dict()['discord_id'],
-                                usr.to_dict()['group'], usr.to_dict()['email'])
+                                usr.to_dict()['group_name'], usr.to_dict()['email'])
 
         return False
 
