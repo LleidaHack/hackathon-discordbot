@@ -239,7 +239,7 @@ class DiscordBot:
 
     async def start_register(self, author):
         import src.texts.login_text as login_texts
-        user_discord = DB.getUser(discord_id=author.id)
+        user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
 
@@ -254,7 +254,7 @@ class DiscordBot:
         web_user, group = DB.recover_web_group_by_user(email)
         if web_user:
             logging.info("Usuario localizado")
-            discord_user = DB.getUser(email=email)
+            discord_user = DB.get_user(email=email)
             if discord_user:
                 await user.send(login_texts.REGISTER_ALREADY_REGISTER)
                 pass
@@ -270,7 +270,7 @@ class DiscordBot:
 
                         role = discord.utils.get(guild.roles, name=group.group_name)
                         discord_group.members.append(user.id)
-                        DB.createOrUpdateGroup(discord_group)
+                        DB.create_or_update_group(discord_group)
                         discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
                         logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
                         await member.add_roles(role)
@@ -281,7 +281,7 @@ class DiscordBot:
                         await user.send(login_texts.USER_NO_GROUP)
 
 
-                    self.database.createOrUpdateUser(discord_user)
+                    DB.create_or_update_user(discord_user)
                     # Creacion usuario
                     await user.send(login_texts.REGISTER_OK)
                 else:
