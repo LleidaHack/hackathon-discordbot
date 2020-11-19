@@ -59,9 +59,23 @@ class DiscordBot:
 
         self.question_num = 0
 
+
+        @self.client.command()
+        async def login(ctx):
+            await self.start_register(ctx.author)
+
         @self.client.event
         async def on_member_join(member):
-            await self.login(member)
+            import texts.login_text as login_texts
+            await member.send(embed=login_texts.WELCOME_MESSAGE)
+            await self.start_register(member)
+
+        @self.client.listen('on_message')
+        async def on_message(message):
+            if message.author in self.user_registering and not message.guild and not message.author.bot:
+                logging.info("Email enviado")
+                await self.login(message.author, message.content)
+                logging.info("Email checked")
 
     def start(self):
         logging.info("Starting bot!")
@@ -147,13 +161,6 @@ class DiscordBot:
         for channel in ctx.guild.channels:
             if channel.name == name:
                 return channel.id
-
-    async def login(self, member):
-        import src.texts.login_text as login_texts
-        logging.info("Enviando mensaje por privado para hacer login")
-        name = member.nick
-        await member.send(login_texts.send_message_login(name), delete_after=20)
-        await member.author.send(embed=login_texts.EMBED_LOGIN_MESSAGE)
 
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
