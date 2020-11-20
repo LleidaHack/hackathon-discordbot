@@ -58,7 +58,7 @@ class DiscordBot:
 
         self.question_num = 0
 
-
+        self.user_registering = {}
         @self.client.command()
         async def login(ctx):
             await self.start_register(ctx.author)
@@ -95,7 +95,7 @@ class DiscordBot:
             logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
             await ctx.send(texts.NOT_REGISTERED_ERROR)
             return
-        if user.group_name is not None or user.group_name != '':
+        if user.group_name is not None and user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
             return
@@ -135,7 +135,8 @@ class DiscordBot:
                 await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
                 await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
-
+        user.group_name = group.name
+        DB.create_or_update_user(user)
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
 
@@ -237,24 +238,26 @@ class DiscordBot:
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
 
-    async def start_register(self, author):
-        import texts.login_text as login_texts
-        user_discord = self.database.getUser(discord_id=author.id)
+    async def start_register(self, author, ctx = None):
+        import src.texts.login_text as login_texts
+        if ctx:
+            await ctx.send(login_texts.PM_SENDED)
+        user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
 
             await author.send(login_texts.REGISTER_MESSAGE)
             self.user_registering[author] = 0
         else:
-            #send message already registrado
+            author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
     async def login(self, user, email):
-        import texts.login_text as login_texts
+        import src.texts.login_text as login_texts
         logging.info("Email test")
-        web_user, group = self.database.recover_web_group_by_user(email)
+        web_user, group = DB.recover_web_group_by_user(email)
         if web_user:
             logging.info("Usuario localizado")
-            discord_user = self.database.getUser(email=email)
+            discord_user = DB.get_user(email=email)
             if discord_user:
                 await user.send(login_texts.REGISTER_ALREADY_REGISTER)
                 pass
@@ -263,25 +266,25 @@ class DiscordBot:
                 member = guild.get_member(user.id)
                 if guild:
                     if group:
-                        discord_group = self.database.getGroup(group.group_name)
+                        discord_group = DB.getGroup(group.group_name)
                         if not discord_group:
                             await  self.create_group_on_server(guild, group)
                             discord_group = group
 
                         role = discord.utils.get(guild.roles, name=group.group_name)
                         discord_group.members.append(user.id)
-                        self.database.createOrUpdateGroup(discord_group)
-                        discord_user = User(user.name, user.discriminator, user.id, group.group_name,email)
+                        DB.create_or_update_group(discord_group)
+                        discord_user = ModelUser(user.name, user.discriminator, user.id, group.group_name,email)
                         logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
                         await member.add_roles(role)
                         await user.send(login_texts.USER_HAS_GROUP)
 
                     else:
-                        discord_user = User(user.name, user.discriminator, user.id, '', email)
+                        discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
                         await user.send(login_texts.USER_NO_GROUP)
 
 
-                    self.database.createOrUpdateUser(discord_user)
+                    DB.create_or_update_user(discord_user)
                     # Creacion usuario
                     await user.send(login_texts.REGISTER_OK)
                 else:
@@ -292,3 +295,4 @@ class DiscordBot:
             await user.send(login_texts.REGISTER_KO)
 
             pass
+        self.user_registering.pop(user)
