@@ -135,7 +135,8 @@ class DiscordBot:
                 await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
                 await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
-
+        user.group_name = group.name
+        DB.create_or_update_user(user)
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
 
