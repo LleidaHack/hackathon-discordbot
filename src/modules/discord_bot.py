@@ -306,7 +306,7 @@ class DiscordBot:
                 await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
 
-    async def joke_command(ctx):
+    async def joke_command(self, ctx):
         chistes = [
             "- ¿Por que los de Lepe ponen internet en la ventana?\n- Para tener windows vista.",
             "- ¿Cuántos técnicos de Microsoft hacen falta para cambiar una bombilla?\n- Ninguno, es un problema de Hardware.",
