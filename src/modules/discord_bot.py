@@ -248,7 +248,7 @@ class DiscordBot:
                     if group:
                         discord_group = DB.get_group(group.name)
                         if not discord_group:
-                            await  self.create_group_on_server(guild, group, guild)
+                            await  self.create_group_on_server(discord_group, group, guild)
                             discord_group = group
 
                         role = discord.utils.get(guild.roles, name=group.name)
