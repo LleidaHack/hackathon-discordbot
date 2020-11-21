@@ -31,6 +31,6 @@ if __name__ == "__main__":
             "- ¿Por qué McDonald's no sirve caracoles?\n- Porque no son comida rápida.",
             "- Va un caracol y derrapa."]
 
-        if message.content == 'eps!joke':
+        if message.content == 'joke':
             response = random.choice(chistes)
             await message.channel.send(response)
