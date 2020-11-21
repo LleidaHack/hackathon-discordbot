@@ -60,6 +60,7 @@ class DiscordBot:
         self.question_num = 0
 
         self.user_registering = {}
+
         @self.client.command()
         async def login(ctx):
             await self.start_register(ctx.author)
@@ -158,11 +159,11 @@ class DiscordBot:
             return
         people = list(map(lambda x: x.split('#'), ctx.message.content.split()[1:]))
         people: List[ModelUser] = list(map(lambda x: DB.get_user(username=x[0], discriminator=x[1]), people))
-        if not any(people) :
+        if not any(people):
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people = list(filter(lambda  x: x is not None, people))
+        people = list(filter(lambda x: x is not None, people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) < 4:
             logging.error(
@@ -222,8 +223,7 @@ class DiscordBot:
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
-
-    async def start_register(self, author, ctx = None):
+    async def start_register(self, author, ctx=None):
         import src.texts.login_text as login_texts
         if ctx:
             await ctx.send(login_texts.PM_SENDED)
@@ -236,6 +236,7 @@ class DiscordBot:
         else:
             author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
+
     async def login(self, user, email, guild):
         import src.texts.login_text as login_texts
         logging.info("Email test")
@@ -259,7 +260,7 @@ class DiscordBot:
                         role = discord.utils.get(guild.roles, name=group.name)
                         discord_group.members.append(user.id)
                         DB.create_or_update_group(discord_group)
-                        discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
+                        discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
                         logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
                         await member.add_roles(role)
                         await user.send(login_texts.USER_HAS_GROUP)
@@ -267,7 +268,6 @@ class DiscordBot:
                     else:
                         discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
                         await user.send(login_texts.USER_NO_GROUP)
-
 
                     DB.create_or_update_user(discord_user)
                     # Creacion usuario
@@ -320,6 +320,5 @@ class DiscordBot:
             "- ¿Por qué McDonald's no sirve caracoles?\n- Porque no son comida rápida.",
             "- Va un caracol y derrapa."]
 
-        if ctx.content == 'joke':
-            response = random.choice(chistes)
-            await ctx.channel.send(response)
+        response = random.choice(chistes)
+        await ctx.channel.send(response)
