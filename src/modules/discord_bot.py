@@ -247,15 +247,11 @@ class DiscordBot:
                     print(os.getenv('GUILD'))
                 if group:
                     discord_group = DB.get_group(group.name)
+                    logging.info(f"Se ha detectado el grupo {discord_group}")
                     if not discord_group:
                         await  self.create_group_on_server(group, member, guild)
                         discord_group = DB.get_group(group.name)
                     role = discord.utils.get(guild.roles, name=group.name)
-                    if role is None:
-                        logging.info(f"No se ha encontrado role {group.name}")
-                        logging.info(f"Creando role {group.name}")
-                        await guild.create_role(name=group.name)
-                        role = discord.utils.get(guild.roles, name=group.name)
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
                     discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
@@ -267,6 +263,8 @@ class DiscordBot:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
                     await user.send(login_texts.USER_NO_GROUP)
 
+                role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
+                await member.add_roles(role)
 
                 DB.create_or_update_user(discord_user)
                 # Creacion usuario
@@ -281,11 +279,10 @@ class DiscordBot:
     async def create_group_on_server(self, group, user, guild):
         logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
         DB.create_or_update_group(group)
-        guild = ctx.guild
         logging.info("[COMMAND CREATE - OK] Creando rol")
 
         await guild.create_role(name=group.name)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        role = discord.utils.get(guild.roles, name=group.name)
         logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
         await user.add_roles(role)
 
