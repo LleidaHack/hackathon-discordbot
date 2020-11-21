@@ -115,7 +115,7 @@ class DiscordBot:
             return
         await ctx.send(texts.STARTING_CREATE_GROUP)
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
-        self.create_group_on_server(group, ctx.message.author, ctx.guild)
+        await self.create_group_on_server(group, ctx.author, ctx.guild)
         user.group_name = group.name
         DB.create_or_update_user(user)
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
@@ -159,9 +159,10 @@ class DiscordBot:
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people = list(filter(lambda x: x is not None, people))
+
+        people = list(filter(lambda  x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
-        if team.size() + len(people) < 4:
+        if team.size() + len(people) >= 4:
             logging.error(
                 f"Usuario {username} quiere añadir al grupo {team.name} {len(people)} personas pero ya son {team.size()}")
             await ctx.send(txt.TEAM_OVERFLOW)
@@ -252,15 +253,11 @@ class DiscordBot:
                     print(os.getenv('GUILD'))
                 if group:
                     discord_group = DB.get_group(group.name)
+                    logging.info(f"Se ha detectado el grupo {discord_group}")
                     if not discord_group:
                         await  self.create_group_on_server(group, member, guild)
                         discord_group = DB.get_group(group.name)
                     role = discord.utils.get(guild.roles, name=group.name)
-                    if role is None:
-                        logging.info(f"No se ha encontrado role {group.name}")
-                        logging.info(f"Creando role {group.name}")
-                        await guild.create_role(name=group.name)
-                        role = discord.utils.get(guild.roles, name=group.name)
 
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
@@ -270,9 +267,12 @@ class DiscordBot:
                     await user.send(login_texts.USER_HAS_GROUP)
 
                 else:
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
                     await user.send(login_texts.USER_NO_GROUP)
 
+
+                role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
+                await member.add_roles(role)
                 DB.create_or_update_user(discord_user)
                 # Creacion usuario
                 await user.send(login_texts.REGISTER_OK)
@@ -286,11 +286,10 @@ class DiscordBot:
     async def create_group_on_server(self, group, user, guild):
         logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
         DB.create_or_update_group(group)
-        guild = ctx.guild
         logging.info("[COMMAND CREATE - OK] Creando rol")
 
         await guild.create_role(name=group.name)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        role = discord.utils.get(guild.roles, name=group.name)
         logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
         await user.add_roles(role)
 
