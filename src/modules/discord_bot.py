@@ -73,7 +73,7 @@ class DiscordBot:
         async def on_message(message):
             if message.author in self.user_registering and not message.guild and not message.author.bot:
                 logging.info("Email enviado")
-                await self.login(message.author, message.content)
+                await self.login(message.author, message.content, message.guild)
                 logging.info("Email checked")
 
     def start(self):
@@ -113,28 +113,7 @@ class DiscordBot:
             return
         await ctx.send(texts.STARTING_CREATE_GROUP)
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
-        logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
-        DB.create_or_update_group(group)
-        guild = ctx.guild
-        logging.info("[COMMAND CREATE - OK] Creando rol")
-
-        await guild.create_role(name=group.name)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
-        logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
-        await ctx.message.author.add_roles(role)
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            role: discord.PermissionOverwrite(read_messages=True)
-        }
-        logging.info("[COMMAND CREATE - OK] Localizando categoria de equipos")
-
-        for cat in guild.categories:
-            if str(cat.id) == os.getenv('TEAMS_CATEGORY_ID'):
-                logging.info("[COMMAND CREATE - OK] Creando canales de chat y voz")
-                await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
-                await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
-                break
+        self.create_group_on_server(group, ctx.message.author, ctx.guild)
         user.group_name = group.name
         DB.create_or_update_user(user)
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
@@ -252,7 +231,7 @@ class DiscordBot:
         else:
             author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
-    async def login(self, user, email):
+    async def login(self, user, email, guild):
         import src.texts.login_text as login_texts
         logging.info("Email test")
         web_user, group = DB.recover_web_group_by_user(email)
@@ -269,7 +248,7 @@ class DiscordBot:
                     if group:
                         discord_group = DB.get_group(group.name)
                         if not discord_group:
-                            await  self.create_group_on_server(guild, group)
+                            await  self.create_group_on_server(guild, group, guild)
                             discord_group = group
 
                         role = discord.utils.get(guild.roles, name=group.name)
@@ -297,3 +276,27 @@ class DiscordBot:
 
             pass
         self.user_registering.pop(user)
+
+    async def create_group_on_server(self, group, user, guild):
+        logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
+        DB.create_or_update_group(group)
+        guild = ctx.guild
+        logging.info("[COMMAND CREATE - OK] Creando rol")
+
+        await guild.create_role(name=group.name)
+        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
+        await user.add_roles(role)
+
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            role: discord.PermissionOverwrite(read_messages=True)
+        }
+        logging.info("[COMMAND CREATE - OK] Localizando categoria de equipos")
+
+        for cat in guild.categories:
+            if str(cat.id) == os.getenv('TEAMS_CATEGORY_ID'):
+                logging.info("[COMMAND CREATE - OK] Creando canales de chat y voz")
+                await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
+                await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
+                break
