@@ -174,10 +174,11 @@ class DiscordBot:
             return
         people = list(map(lambda x: x.split('#'), ctx.message.content.split()[1:]))
         people: List[ModelUser] = list(map(lambda x: DB.get_user(username=x[0], discriminator=x[1]), people))
-        if not any(people):
+        if not any(people) :
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
+        people = list(filter(lambda  x: x is not None, people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) < 4:
             logging.error(
