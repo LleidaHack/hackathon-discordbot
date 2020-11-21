@@ -12,6 +12,7 @@ from src.crud.firebase import Firebase
 from src.models.invitation import Invitation
 from src.models.team import Team
 from src.models.user import User as ModelUser
+import random
 
 DB = Firebase()
 
@@ -55,9 +56,14 @@ class DiscordBot:
         self.question_num = 0
 
         self.user_registering = {}
+
         @self.client.command()
         async def login(ctx):
             await self.start_register(ctx.author)
+
+        @self.client.command()
+        async def joke(ctx):
+            await self.joke_command(ctx)
 
         @self.client.event
         async def on_member_join(member):
@@ -149,10 +155,11 @@ class DiscordBot:
             return
         people = list(map(lambda x: x.split('#'), ctx.message.content.split()[1:]))
         people: List[ModelUser] = list(map(lambda x: DB.get_user(username=x[0], discriminator=x[1]), people))
-        if not any(people) :
+        if not any(people):
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
+
         people = list(filter(lambda  x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) >= 4:
@@ -213,8 +220,7 @@ class DiscordBot:
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
-
-    async def start_register(self, author, ctx = None):
+    async def start_register(self, author, ctx=None):
         import src.texts.login_text as login_texts
         if ctx:
             await ctx.send(login_texts.PM_SENDED)
@@ -252,6 +258,7 @@ class DiscordBot:
                         await  self.create_group_on_server(group, member, guild)
                         discord_group = DB.get_group(group.name)
                     role = discord.utils.get(guild.roles, name=group.name)
+
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
                     discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
@@ -263,9 +270,9 @@ class DiscordBot:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
                     await user.send(login_texts.USER_NO_GROUP)
 
+
                 role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
                 await member.add_roles(role)
-
                 DB.create_or_update_user(discord_user)
                 # Creacion usuario
                 await user.send(login_texts.REGISTER_OK)
@@ -298,3 +305,20 @@ class DiscordBot:
                 await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
                 await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
+
+    async def joke_command(self, ctx):
+        chistes = [
+            "- ¿Por que los de Lepe ponen internet en la ventana?\n- Para tener windows vista.",
+            "- ¿Cuántos técnicos de Microsoft hacen falta para cambiar una bombilla?\n- Ninguno, es un problema de Hardware.",
+            "- ¿Qué es el hardware?\n- El que recibe los golpes cuando falla el software.",
+            "- ¿Cuál es el plato preferido de los informáticos?\n- Las patatas chips.",
+            "- ¿AlguienSabeComoArreglarLaBarraEspaciadora?",
+            "- ¿Cuál es el virus más extendido del mundo?\n- El Sistema Windows.",
+            "- Abuelo, por qué estás delante del ordenador con los ojos cerrados?\n- Esque me ha pedido que cierre las pestañas.",
+            "- Venga, bueno, aceptamos Windows Vista como Sistema Operativo.",
+            "- ¿Cuál es la canción favorita de un caracol?\n- Despacito.",
+            "- ¿Por qué McDonald's no sirve caracoles?\n- Porque no son comida rápida.",
+            "- Va un caracol y derrapa."]
+
+        response = random.choice(chistes)
+        await ctx.channel.send(response)
