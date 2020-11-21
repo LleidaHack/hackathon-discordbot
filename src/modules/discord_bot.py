@@ -15,10 +15,6 @@ from src.models.user import User as ModelUser
 
 DB = Firebase()
 
-
-# at least:
-# DB = lambda: Firebase()
-
 class DiscordBot:
     def __init__(self):
         logging.info("Reading bot config data")
@@ -72,9 +68,9 @@ class DiscordBot:
         @self.client.listen('on_message')
         async def on_message(message):
             if message.author in self.user_registering and not message.guild and not message.author.bot:
-                logging.info("Email enviado")
+                logging.info(f"Email enviado: {message.content}")
                 await self.login(message.author, message.content, message.guild)
-                logging.info("Email checked")
+                logging.info(f"Email checked: {message.content}")
 
     def start(self):
         logging.info("Starting bot!")
@@ -231,12 +227,13 @@ class DiscordBot:
         else:
             author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
+
     async def login(self, user, email, guild):
         import src.texts.login_text as login_texts
         logging.info("Email test")
         web_user, group = DB.recover_web_group_by_user(email)
         if web_user:
-            logging.info("Usuario localizado")
+            logging.info(f"Usuario localizado {web_user.nickname}")
             discord_user = DB.get_user(email=email)
             if discord_user:
                 await user.send(login_texts.REGISTER_ALREADY_REGISTER)
@@ -244,32 +241,36 @@ class DiscordBot:
             else:
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
                 member = guild.get_member(user.id)
-                if guild:
-                    if group:
-                        discord_group = DB.get_group(group.name)
-                        if not discord_group:
-                            await  self.create_group_on_server(discord_group, group, guild)
-                            discord_group = group
-
-                        role = discord.utils.get(guild.roles, name=group.name)
-                        discord_group.members.append(user.id)
-                        DB.create_or_update_group(discord_group)
-                        discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
-                        logging.info("[REGISTER - OK] Añadiendo el usuario al rol")
-                        await member.add_roles(role)
-                        await user.send(login_texts.USER_HAS_GROUP)
-
-                    else:
-                        discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
-                        await user.send(login_texts.USER_NO_GROUP)
-
-
-                    DB.create_or_update_user(discord_user)
-                    # Creacion usuario
-                    await user.send(login_texts.REGISTER_OK)
-                else:
+                logging.info(f"Miembro de la Guild: {member.nick}")
+                if not guild:
                     print("ERROR CONFIG")
                     print(os.getenv('GUILD'))
+                if group:
+                    discord_group = DB.get_group(group.name)
+                    if not discord_group:
+                        await  self.create_group_on_server(group, member, guild)
+                        discord_group = DB.get_group(group.name)
+                    role = discord.utils.get(guild.roles, name=group.name)
+                    if role is None:
+                        logging.info(f"No se ha encontrado role {group.name}")
+                        logging.info(f"Creando role {group.name}")
+                        await guild.create_role(name=group.name)
+                        role = discord.utils.get(guild.roles, name=group.name)
+                    discord_group.members.append(user.id)
+                    DB.create_or_update_group(discord_group)
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
+                    logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
+                    await member.add_roles(role)
+                    await user.send(login_texts.USER_HAS_GROUP)
+
+                else:
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
+                    await user.send(login_texts.USER_NO_GROUP)
+
+
+                DB.create_or_update_user(discord_user)
+                # Creacion usuario
+                await user.send(login_texts.REGISTER_OK)
         else:
             logging.info("No se ha encontrado al usuario")
             await user.send(login_texts.REGISTER_KO)
