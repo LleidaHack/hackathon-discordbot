@@ -153,9 +153,9 @@ class DiscordBot:
             logging.error("Gente no encontrada.")
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
-        people = list(filter(lambda  x: x is not None, people))
+        people = list(filter(lambda  x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
-        if team.size() + len(people) < 4:
+        if team.size() + len(people) >= 4:
             logging.error(
                 f"Usuario {username} quiere añadir al grupo {team.name} {len(people)} personas pero ya son {team.size()}")
             await ctx.send(txt.TEAM_OVERFLOW)
@@ -260,7 +260,7 @@ class DiscordBot:
                     await user.send(login_texts.USER_HAS_GROUP)
 
                 else:
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, '', email)
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
                     await user.send(login_texts.USER_NO_GROUP)
 
                 role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
