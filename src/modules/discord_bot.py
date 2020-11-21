@@ -143,7 +143,7 @@ class DiscordBot:
         pass
 
     async def ask_command(self, ctx, question):
-        import src.texts.ask_texts as ask_texts
+        import src.texts.ask_reply_texts as ask_texts
         logging.info("Enviando pregunta")
         await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
         channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
