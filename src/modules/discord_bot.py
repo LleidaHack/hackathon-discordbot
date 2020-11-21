@@ -109,7 +109,7 @@ class DiscordBot:
             return
         await ctx.send(texts.STARTING_CREATE_GROUP)
         group = Team(' '.join(command[1:]), [ctx.message.author.id])
-        self.create_group_on_server(group, ctx.message.author, ctx.guild)
+        await self.create_group_on_server(group, ctx.author, ctx.guild)
         user.group_name = group.name
         DB.create_or_update_user(user)
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
