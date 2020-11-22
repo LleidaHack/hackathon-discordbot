@@ -65,6 +65,10 @@ class DiscordBot:
         async def joke(ctx):
             await self.joke_command(ctx)
 
+        @self.client.command()
+        async def rpsls(ctx, option):
+            await self.rpsls_command(ctx)
+
         @self.client.event
         async def on_member_join(member):
             import src.texts.login_text as login_texts
@@ -338,3 +342,19 @@ class DiscordBot:
 
         response = random.choice(chistes)
         await ctx.channel.send(response)
+
+    async def rpsls_command(self, ctx):
+        options = [
+            'Rock',
+            'Paper',
+            'Scissor',
+            'Lizard',
+            'Spock'
+        ]
+        request = ctx.message.content.split()[1]
+        if request in options:
+            response = random.choice(options)
+            await ctx.channel.send(response)
+        else:
+            response = "Has to be one of this Options: Rock, Paper, Scissor, Lizard, Spock."
+            await ctx.channel.send(response)
