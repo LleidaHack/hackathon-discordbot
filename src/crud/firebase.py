@@ -85,7 +85,7 @@ class Firebase:
         doc = todo_ref.document(group.name)
         doc.set(json)
 
-    def get_group(self, group_name: str) -> Union[Team, bool]:
+    def get_group(self, group_name: str) -> Optional[Team]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
         if group_name:
             doc = todo_ref.document(group_name).get()
@@ -98,7 +98,7 @@ class Firebase:
         json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
         todo_ref.document(None).set(json)
 
-    def get_invitation(self, user_id, group_name) -> Union[bool, Tuple[int, Invitation]]:
+    def get_invitation(self, user_id, group_name) -> Optional[Tuple[int, Invitation]]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
         for usr in todo_ref.stream():
             if usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name:
@@ -113,5 +113,5 @@ class Firebase:
             user_id, invitation = invitation
             invitation.accept()
             todo_ref.document(user_id).set(invitation)
-        else:
-            return None
+            return True
+        return False

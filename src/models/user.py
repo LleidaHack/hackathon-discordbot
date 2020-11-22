@@ -7,3 +7,6 @@ class User:
         self.discord_id = discord_id
         self.group_name = group_name
         self.email = email
+
+    def get_full_name(self):
+        return f"{self.username}#{self.discriminator}"
