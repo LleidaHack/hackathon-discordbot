@@ -53,6 +53,10 @@ class DiscordBot:
         async def join(ctx):
             await self.join_command(ctx)
 
+        @self.client.command()
+        async def leave(ctx):
+            await self.leave_command(ctx)
+
         self.question_num = 0
 
         self.user_registering = {}
@@ -223,7 +227,10 @@ class DiscordBot:
             ctx.send(txt.ERROR_SERVER)
             return
         logging.info(f"{fac.get_author().name} invitation del grupo {team_name}")
-        DB.accept_invitation(invitation.user_id, invitation.group_name)
+        if not DB.accept_invitation(invitation.user_id, invitation.group_name):
+            logging.error(f"Invitación no encontrada")
+            ctx.send(txt.ERROR_SERVER)
+            return
         team = DB.get_group(invitation.group_name)
         team.add_user(user.discord_id)
         DB.create_or_update_group(team)
@@ -338,3 +345,31 @@ class DiscordBot:
 
         response = random.choice(chistes)
         await ctx.channel.send(response)
+
+    async def leave_command(self, ctx):
+        from src.modules.facades import ContextFacade
+        import src.texts.leave_texts as txt
+        fac: ContextFacade = ContextFacade(ctx)
+        logging.info(f"leave command por {fac.get_author().name}")
+        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
+        if user is None:
+            logging.error(f"User {fac.get_author().name} no registrado.")
+            ctx.send(txt.USER_NOT_REGISTERED)
+            return
+        elif user.group_name is None:
+            logging.error(f"User {fac.get_author().name} no está en un grupo.")
+            ctx.send(txt.USER_NOT_IN_TEAM)
+            return
+        group = DB.get_group(user.group_name)
+        if not group:
+            logging.error(f"No se ha encontrado el grupo {user.group_name} del usuario {user.get_full_name()}.")
+            ctx.send(txt.SERVER_ERROR)
+            return
+        group.remove_user(user.discord_id)
+        user.group_name = None
+        DB.create_or_update_user(user)
+        DB.create_or_update_group(group)
+        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        member = ctx.guild.get_member(user.discord_id)
+        await member.remove_role(role)
+        await ctx.send(txt.LEAVE_MSG(member.name, role.name))
