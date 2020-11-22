@@ -338,7 +338,6 @@ class DiscordBot:
         response = random.choice(texts.jokes)
         await ctx.channel.send(response)
 
-<<<<<<< HEAD
     async def rpsls_command(self, ctx):
         options = [
             'Rock',
@@ -370,7 +369,6 @@ class DiscordBot:
                     await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
         else:
             await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
-=======
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
@@ -406,4 +404,3 @@ class DiscordBot:
             DB.delete_group(group.name)
             role.delete()
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
->>>>>>> 288e483077fe6ad864fd35708562742508eee7b5
