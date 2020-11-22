@@ -254,7 +254,7 @@ class DiscordBot:
             await author.send(login_texts.REGISTER_MESSAGE)
             self.user_registering[author] = 0
         else:
-            author.send(login_texts.REGISTER_ALREADY_REGISTER)
+            await author.send(login_texts.REGISTER_ALREADY_REGISTER)
             pass
 
     async def login(self, user, email, guild):
