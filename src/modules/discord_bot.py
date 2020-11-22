@@ -85,10 +85,12 @@ class DiscordBot:
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
         async def deletemsgs(ctx):
+            import time 
             messages = await ctx.channel.history(limit=123).flatten()
             for message in messages:
                 try:
                    await message.delete()
+                   time.sleep(0.75)
                 except:
                     pass
 
