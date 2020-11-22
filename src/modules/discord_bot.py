@@ -78,6 +78,20 @@ class DiscordBot:
                 await self.login(message.author, message.content, message.guild)
                 logging.info(f"Email checked: {message.content}")
 
+
+
+################# ADMIN COMMANDS ###################################
+
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def deletemsgs(ctx):
+            messages = await ctx.channel.history(limit=123).flatten()
+            for message in messages:
+                try:
+                   await message.delete()
+                except:
+                    pass
+
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
