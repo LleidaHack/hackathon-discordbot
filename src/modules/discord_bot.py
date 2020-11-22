@@ -46,6 +46,8 @@ class DiscordBot:
         logging.info("Reading bot functions")
 
         self.questions = {}
+        self.question_num = 0
+        self.user_registering = {}
 
         @self.client.command()
         async def help(ctx):
@@ -80,9 +82,6 @@ class DiscordBot:
         async def leave(ctx):
             await self.leave_command(ctx)
 
-        self.question_num = 0
-
-        self.user_registering = {}
 
         @self.client.command()
         async def login(ctx):
