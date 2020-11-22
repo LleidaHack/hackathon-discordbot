@@ -1,7 +1,7 @@
 import os
 import logging
 
-from typing import Union, Tuple, Dict, Optional
+from typing import Union, Tuple, Dict, Optional, List
 
 from firebase_admin import credentials, firestore, initialize_app
 
@@ -97,6 +97,15 @@ class Firebase:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
         json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
         todo_ref.document(None).set(json)
+
+    def get_invitations(self, user_id) -> List[Tuple[int, Invitation]]:
+        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
+        res = []
+        for usr in todo_ref.stream():
+            if usr.to_dict()['user_id'] == user_id:
+                invit = Invitation.from_dict(usr.to_dict())
+                res.append((usr.id, invit))
+        return res
 
     def get_invitation(self, user_id, group_name) -> Optional[Tuple[int, Invitation]]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')

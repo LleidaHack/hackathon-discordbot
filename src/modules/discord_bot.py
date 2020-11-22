@@ -229,6 +229,9 @@ class DiscordBot:
         if user.group_name is not None:
             logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
             ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
+        msg = fac.get_message().split()
+        if len(msg) == 0:
+            DB.get_invitations(user.discord_id)
         group_name = fac.get_message().split()[1]
         invitation = DB.get_invitation(user.discord_id, group_name)
         if not invitation:
