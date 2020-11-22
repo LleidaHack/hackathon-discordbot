@@ -110,7 +110,7 @@ class DiscordBot:
         @discord_commands.has_permissions(administrator=True)
         async def deletemsgs(ctx):
             import time
-            messages = await ctx.channel.history(limit=123).flatten()
+            messages = await ctx.channel.history(limit=None).flatten()
             for message in messages:
                 try:
                     await message.delete()
@@ -228,25 +228,38 @@ class DiscordBot:
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
         if user.group_name is not None:
             logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
-            ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
+            await ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
         msg = fac.get_message().split()
-        if len(msg) == 0:
-            DB.get_invitations(user.discord_id)
-        group_name = fac.get_message().split()[1]
-        invitation = DB.get_invitation(user.discord_id, group_name)
+        if len(msg) == 1:
+            invitations = DB.get_invitations(user.discord_id)
+            if len(invitations) > 1:
+                logging.error(f"User {fac.get_author().name} tiene más de una invitacion pero no ha especificado equipo.")
+                await ctx.send(txt.MANY_INVITES(list(map(lambda x: x.group_name, invitations))))
+                return
+            if len(invitations) == 0:
+                logging.error(f"User {fac.get_author().name} no tiene ninguna invitacion.")
+                await ctx.send(txt.ANY_INVITE(user.username, user.discriminator))
+                return
+            group_name = invitations[0].group_name
+            invitation = invitations[0]
+            
+        else:
+            group_name = fac.get_message().split()[1]
+            invitation = DB.get_invitation(user.discord_id, group_name)
+
         if not invitation:
             logging.error(f"User {fac.get_author().name} no tiene invitaciones del grupo {group_name}.")
-            ctx.send(txt.NOT_ALLOWED_TEAM(group_name))
+            await ctx.send(txt.NOT_ALLOWED_TEAM(group_name))
             return
         _, invitation = invitation
         if invitation.group_name != group_name:
             logging.error(f"Illegal Statement: {group_name} must be {invitation.group_name}")
-            ctx.send(txt.ERROR_SERVER)
+            await ctx.send(txt.ERROR_SERVER)
             return
         logging.info(f"{fac.get_author().name} invitation del grupo {group_name}")
         if not DB.accept_invitation(invitation.user_id, invitation.group_name):
             logging.error(f"Invitación no encontrada")
-            ctx.send(txt.ERROR_SERVER)
+            await ctx.send(txt.ERROR_SERVER)
             return
         group = DB.get_group(invitation.group_name)
         group.add_user(user.discord_id)
