@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 import logging
 import os
-from typing import List
+import random
+from functools import wraps
+from typing import List, Optional
 
 import discord
 from discord import Member
@@ -12,9 +14,24 @@ from src.crud.firebase import Firebase
 from src.models.invitation import Invitation
 from src.models.group import Group
 from src.models.user import User as ModelUser
-import random
 
 DB = Firebase()
+
+
+def authorization_required(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        import src.texts.auth as txt
+        ctx = args[0]
+        user = DB.get_user(discord_id=ctx.message.author.id)
+        if user is None:
+            logging.info("Usuario no registrado")
+            await ctx.send(txt.NOT_REGISTERED_ERROR)
+            return
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 class DiscordBot:
     def __init__(self):
@@ -42,18 +59,22 @@ class DiscordBot:
             await self.reply_command(ctx, num, reply)
 
         @self.client.command()
+        @authorization_required
         async def create(ctx):
             await self.create_command(ctx)
 
         @self.client.command()
+        @authorization_required
         async def invite(ctx):
             await self.invite_command(ctx)
 
         @self.client.command()
+        @authorization_required
         async def join(ctx):
             await self.join_command(ctx)
 
         @self.client.command()
+        @authorization_required
         async def leave(ctx):
             await self.leave_command(ctx)
 
@@ -86,19 +107,17 @@ class DiscordBot:
                 await self.login(message.author, message.content, message.guild)
                 logging.info(f"Email checked: {message.content}")
 
-
-
-################# ADMIN COMMANDS ###################################
+        ################# ADMIN COMMANDS ###################################
 
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
         async def deletemsgs(ctx):
-            import time 
+            import time
             messages = await ctx.channel.history(limit=123).flatten()
             for message in messages:
                 try:
-                   await message.delete()
-                   time.sleep(1)
+                    await message.delete()
+                    time.sleep(1)
                 except:
                     pass
 
@@ -115,12 +134,7 @@ class DiscordBot:
 
     async def create_command(self, ctx):
         import src.texts.create_texts as texts
-
         user = DB.get_user(discord_id=ctx.message.author.id)
-        if not user:
-            logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
-            await ctx.send(texts.NOT_REGISTERED_ERROR)
-            return
         if user.group_name is not None and user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
@@ -172,7 +186,7 @@ class DiscordBot:
         from typing import Union
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
-        group: Union[Group, bool] = DB.get_group(DB.get_user(ctx.author.id).group_name)
+        group: Optional[Group] = DB.get_group(DB.get_user(ctx.author.id).group_name)
         if not group:
             logging.error(f"{ctx.author.name} no tiene grupo")
             await ctx.send(txt.NOT_IN_GROUP)
@@ -184,7 +198,7 @@ class DiscordBot:
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
 
-        people = list(filter(lambda  x: x is not None or not "", people))
+        people = list(filter(lambda x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if group.size() + len(people) >= 4:
             logging.error(
@@ -212,11 +226,7 @@ class DiscordBot:
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"join command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        if user is None:
-            logging.error(f"User {fac.get_author().name} no registrado.")
-            ctx.send(txt.USER_NOT_REGISTERED)
-            return
-        elif user.group_name is not None:
+        if user.group_name is not None:
             logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
             ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
         group_name = fac.get_message().split()[1]
@@ -289,7 +299,7 @@ class DiscordBot:
 
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
                     logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
                     await member.add_roles(role)
                     await user.send(login_texts.USER_HAS_GROUP(discord_group.name))
@@ -346,8 +356,8 @@ class DiscordBot:
             'Lizard',
             'Spock'
         ]
-        win_conditions =    [   ('Paper','disaproves','Spock'), 
-                                ('Paper','covers','Rock'), 
+        win_conditions =    [   ('Paper','disaproves','Spock'),
+                                ('Paper','covers','Rock'),
                                 ('Rock','crushes','Scissors'),
                                 ('Rock','crushes','Lizard'),
                                 ('Lizard','eats','Paper'),
@@ -369,17 +379,14 @@ class DiscordBot:
                     await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
         else:
             await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
+
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"leave command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        if user is None:
-            logging.error(f"User {fac.get_author().name} no registrado.")
-            ctx.send(txt.USER_NOT_REGISTERED)
-            return
-        elif user.group_name is None:
+        if user.group_name is None:
             logging.error(f"User {fac.get_author().name} no está en un grupo.")
             ctx.send(txt.USER_NOT_IN_TEAM)
             return
