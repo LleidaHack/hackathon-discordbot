@@ -57,11 +57,23 @@ class DiscordBot:
         async def ask(ctx, question):
             await self.ask_command(ctx, question)
 
-
         @self.client.command()
         async def reply(ctx, num, reply):
             await self.reply_command(ctx, num, reply)
 
+        @self.client.command()
+        async def login(ctx):
+            await self.start_register(ctx.author, ctx)
+
+        @self.client.command()
+        async def joke(ctx):
+            await self.joke_command(ctx)
+
+        @self.client.command()
+        async def rpsls(ctx, option):
+            await self.rpsls_command(ctx)
+
+    ###### COMMANDS FOR HACKERS ######
         @authorization_required
         @self.client.command()
         async def create(ctx):
@@ -82,18 +94,7 @@ class DiscordBot:
         async def leave(ctx):
             await self.leave_command(ctx)
 
-
-        @self.client.command()
-        async def login(ctx):
-            await self.start_register(ctx.author, ctx)
-
-        @self.client.command()
-        async def joke(ctx):
-            await self.joke_command(ctx)
-
-        @self.client.command()
-        async def rpsls(ctx, option):
-            await self.rpsls_command(ctx)
+        ############# EVENTS #############
 
         @self.client.event
         async def on_member_join(member):
@@ -108,7 +109,7 @@ class DiscordBot:
                 await self.login(message.author, message.content, message.guild)
                 logging.info(f"Email checked: {message.content}")
 
-        ################# ADMIN COMMANDS ###################################
+        ################# COMMANDS FOR ADMINS ###################################
 
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
