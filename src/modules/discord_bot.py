@@ -294,8 +294,6 @@ class DiscordBot:
                     await user.send(login_texts.USER_NO_GROUP)
 
 
-                role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
-                await member.add_roles(role)
                 DB.create_or_update_user(discord_user)
                 # Creacion usuario
                 await user.send(login_texts.REGISTER_OK)
