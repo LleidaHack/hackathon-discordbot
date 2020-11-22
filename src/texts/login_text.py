@@ -10,6 +10,7 @@ WELCOME_MESSAGE = discord.Embed(
         Mi nombre es LoBot y estoy aquí para ayudar a los LleidaHackers con la organización. Puedes usar el comando eps!help para ver la ayuda.```
     """
 )
+REGISTER_STARTING = "Aja... bien, bien... Dame unos segundos que reviso..." 
 REGISTER_MESSAGE = "Vamos a ver que reviso la lista... ¿Cuál es tu usuario con el que te has inscrito a la HackEPS?"
 REGISTER_OK = "¡Perfecto! Te has conectado correctamente."
 REGISTER_ALREADY_REGISTER = "Parece que ya estás registrado. Ponte en contacto con un administrador si se trata de un error."

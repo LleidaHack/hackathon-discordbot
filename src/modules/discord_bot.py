@@ -63,7 +63,7 @@ class DiscordBot:
 
         @self.client.command()
         async def login(ctx):
-            await self.start_register(ctx.author)
+            await self.start_register(ctx.author, ctx)
 
         @self.client.command()
         async def joke(ctx):
@@ -245,7 +245,7 @@ class DiscordBot:
 
     async def start_register(self, author, ctx=None):
         import src.texts.login_text as login_texts
-        if ctx:
+        if ctx.guild:
             await ctx.send(login_texts.PM_SENDED)
         user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
@@ -260,6 +260,7 @@ class DiscordBot:
     async def login(self, user, email, guild):
         import src.texts.login_text as login_texts
         logging.info("Email test")
+        await user.send(login_texts.REGISTER_STARTING)
         web_user, group = DB.recover_web_group_by_user(email)
         if web_user:
             logging.info(f"Usuario localizado {web_user.nickname}")
