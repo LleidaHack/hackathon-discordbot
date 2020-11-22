@@ -371,5 +371,5 @@ class DiscordBot:
         DB.create_or_update_group(group)
         role = discord.utils.get(ctx.guild.roles, name=group.name)
         member = ctx.guild.get_member(user.discord_id)
-        await member.remove_role(role)
+        await member.remove_roles(role)
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
