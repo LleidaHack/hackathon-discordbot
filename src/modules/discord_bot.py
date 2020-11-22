@@ -347,14 +347,30 @@ class DiscordBot:
         options = [
             'Rock',
             'Paper',
-            'Scissor',
+            'Scissors',
             'Lizard',
             'Spock'
         ]
-        request = ctx.message.content.split()[1]
-        if request in options:
-            response = random.choice(options)
-            await ctx.channel.send(response)
+        win_conditions =    [   ('Paper','disaproves','Spock'), 
+                                ('Paper','covers','Rock'), 
+                                ('Rock','crushes','Scissors'),
+                                ('Rock','crushes','Lizard'),
+                                ('Lizard','eats','Paper'),
+                                ('Lizard','poisons','Spock'),
+                                ('Spock','vaporizes','Rock'),
+                                ('Spock','smashes','Scissors'),
+                                ('Scissors','cuts','Paper'),
+                                ('Scissors','decapicate','Lizard')
+                            ]
+        player_choice = ctx.message.content.split()[1]
+        if player_choice in options:
+            bot_choice = random.choice(options)
+            if player_choice == bot_choice:
+                await ctx.channel.send('Ni pa ti ni pa mi, empate.:exploding_head: '+player_choice+' shake hands '+bot_choice)
+            for i in win_conditions:
+                if (bot_choice == i[0] and player_choice == i[2]):
+                    await ctx.channel.send('Lo siento pero... He ganado:sunglasses: '+i[0]+' '+i[1]+' '+i[2])
+                if (player_choice == i[0] and bot_choice == i[2]):
+                    await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
         else:
-            response = "Has to be one of this Options: Rock, Paper, Scissor, Lizard, Spock."
-            await ctx.channel.send(response)
+            await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
