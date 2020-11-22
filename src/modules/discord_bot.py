@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 import logging
 import os
+import random
+from functools import wraps
 from typing import List
 
 import discord
@@ -12,9 +14,24 @@ from src.crud.firebase import Firebase
 from src.models.invitation import Invitation
 from src.models.team import Team
 from src.models.user import User as ModelUser
-import random
 
 DB = Firebase()
+
+
+def authorization_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        import src.texts.auth as txt
+        ctx = args[1] # 0: self, 1: ctx
+        user = DB.get_user(discord_id=ctx.message.author.id)
+        if user is None:
+            logging.info("Usuario no registrado")
+            await ctx.send(txt.NOT_REGISTERED_ERROR)
+            return
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 class DiscordBot:
     def __init__(self):
@@ -41,18 +58,22 @@ class DiscordBot:
         async def reply(ctx, num, reply):
             await self.reply_command(ctx, num, reply)
 
+        @authorization_required
         @self.client.command()
         async def create(ctx):
             await self.create_command(ctx)
 
+        @authorization_required
         @self.client.command()
         async def invite(ctx):
             await self.invite_command(ctx)
 
+        @authorization_required
         @self.client.command()
         async def join(ctx):
             await self.join_command(ctx)
 
+        @authorization_required
         @self.client.command()
         async def leave(ctx):
             await self.leave_command(ctx)
@@ -82,19 +103,17 @@ class DiscordBot:
                 await self.login(message.author, message.content, message.guild)
                 logging.info(f"Email checked: {message.content}")
 
-
-
-################# ADMIN COMMANDS ###################################
+        ################# ADMIN COMMANDS ###################################
 
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
         async def deletemsgs(ctx):
-            import time 
+            import time
             messages = await ctx.channel.history(limit=123).flatten()
             for message in messages:
                 try:
-                   await message.delete()
-                   time.sleep(1)
+                    await message.delete()
+                    time.sleep(1)
                 except:
                     pass
 
@@ -111,12 +130,7 @@ class DiscordBot:
 
     async def create_command(self, ctx):
         import src.texts.create_texts as texts
-
         user = DB.get_user(discord_id=ctx.message.author.id)
-        if not user:
-            logging.info("[COMMAND CREATE - ERROR] Usuario no registrado")
-            await ctx.send(texts.NOT_REGISTERED_ERROR)
-            return
         if user.group_name is not None and user.group_name != '':
             logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
             await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
@@ -180,7 +194,7 @@ class DiscordBot:
             await ctx.send(txt.NOT_FOUND_PEOPLE)
             return
 
-        people = list(filter(lambda  x: x is not None or not "", people))
+        people = list(filter(lambda x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
         if team.size() + len(people) >= 4:
             logging.error(
@@ -208,11 +222,7 @@ class DiscordBot:
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"join command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        if user is None:
-            logging.error(f"User {fac.get_author().name} no registrado.")
-            ctx.send(txt.USER_NOT_REGISTERED)
-            return
-        elif user.group_name is not None:
+        if user.group_name is not None:
             logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
             ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
         team_name = fac.get_message().split()[1]
@@ -284,7 +294,7 @@ class DiscordBot:
 
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
+                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
                     logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
                     await member.add_roles(role)
                     await user.send(login_texts.USER_HAS_GROUP)
@@ -292,7 +302,6 @@ class DiscordBot:
                 else:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
                     await user.send(login_texts.USER_NO_GROUP)
-
 
                 role = discord.utils.get(guild.roles, name=os.getenv("HACKER_RANK"))
                 await member.add_roles(role)
@@ -352,11 +361,7 @@ class DiscordBot:
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"leave command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        if user is None:
-            logging.error(f"User {fac.get_author().name} no registrado.")
-            ctx.send(txt.USER_NOT_REGISTERED)
-            return
-        elif user.group_name is None:
+        if user.group_name is None:
             logging.error(f"User {fac.get_author().name} no está en un grupo.")
             ctx.send(txt.USER_NOT_IN_TEAM)
             return
