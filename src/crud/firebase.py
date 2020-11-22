@@ -6,7 +6,7 @@ from typing import Union, Tuple, Dict, Optional
 from firebase_admin import credentials, firestore, initialize_app
 
 from src.models.invitation import Invitation
-from src.models.team import Team
+from src.models.group import Group
 from src.models.user import User
 from src.models.webuser import WebUser
 
@@ -27,10 +27,10 @@ class Firebase:
                                usr.to_dict()['nickname'])
         return None
 
-    def recover_web_group(self, name) -> Union[Team, bool]:
+    def recover_web_group(self, name) -> Union[Group, bool]:
         todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
         doc = todo_ref.document(name).get()
-        return Team(doc.to_dict()['name']) if doc.to_dict() else None
+        return Group(doc.to_dict()['name']) if doc.to_dict() else None
 
     def recover_web_group_by_user(self, email):
         users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
@@ -42,7 +42,7 @@ class Firebase:
                 if user['email'] == email:
                     return WebUser(user['accepted'], user['birthDate'], user['displayName'],
                                user['email'], user['fullName'], user['githubUrl'],
-                               user['nickname']), Team(grp.to_dict()['name'])
+                               user['nickname']), Group(grp.to_dict()['name'])
         return self.recover_web_user(email), None
 
     def create_or_update_user(self, user: User) -> None:
@@ -79,18 +79,18 @@ class Firebase:
     def get_user_from_name(self, username, discriminator):
         return self.get_user(username=username, discriminator=discriminator)
 
-    def create_or_update_group(self, group: Team) -> None:
+    def create_or_update_group(self, group: Group) -> None:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
         json = group.__dict__  # {'name': group.group_name, "members": group.users, "role_id": group.role_id}
         doc = todo_ref.document(group.name)
         doc.set(json)
 
-    def get_group(self, group_name: str) -> Optional[Team]:
+    def get_group(self, group_name: str) -> Optional[Group]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
         if group_name:
             doc = todo_ref.document(group_name).get()
             if doc.to_dict():
-                return Team(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
+                return Group(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
         return None
 
     def create_invitation(self, user_id, group_name) -> None:
@@ -115,3 +115,10 @@ class Firebase:
             todo_ref.document(user_id).set(invitation)
             return True
         return False
+
+    def delete_group (self, group_name):
+        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
+        if group_name:
+            doc = todo_ref.document(group_name)
+            if doc:
+                doc.delete()

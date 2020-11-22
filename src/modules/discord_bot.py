@@ -10,7 +10,7 @@ from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
 from src.models.invitation import Invitation
-from src.models.team import Team
+from src.models.group import Group
 from src.models.user import User as ModelUser
 import random
 
@@ -134,7 +134,7 @@ class DiscordBot:
             await ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
             return
         await ctx.send(texts.STARTING_CREATE_GROUP)
-        group = Team(' '.join(command[1:]), [ctx.message.author.id])
+        group = Group(' '.join(command[1:]), [ctx.message.author.id])
         await self.create_group_on_server(group, ctx.author, ctx.guild)
         user.group_name = group.name
         DB.create_or_update_user(user)
@@ -168,8 +168,8 @@ class DiscordBot:
         from typing import Union
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
-        team: Union[Team, bool] = DB.get_group(DB.get_user(ctx.author.id).group_name)
-        if not team:
+        group: Union[Group, bool] = DB.get_group(DB.get_user(ctx.author.id).group_name)
+        if not group:
             logging.error(f"{ctx.author.name} no tiene grupo")
             await ctx.send(txt.NOT_IN_GROUP)
             return
@@ -182,9 +182,9 @@ class DiscordBot:
 
         people = list(filter(lambda  x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
-        if team.size() + len(people) >= 4:
+        if group.size() + len(people) >= 4:
             logging.error(
-                f"Usuario {username} quiere añadir al grupo {team.name} {len(people)} personas pero ya son {team.size()}")
+                f"Usuario {username} quiere añadir al grupo {group.name} {len(people)} personas pero ya son {group.size()}")
             await ctx.send(txt.TEAM_OVERFLOW)
             return
         for already_member in filter(lambda x: x.group_name is not None, people):
@@ -192,15 +192,15 @@ class DiscordBot:
             await ctx.send(txt.ALREADY_IN_A_GROUP(already_member.username, already_member.group_name))
         people = list(filter(lambda x: x.group_name is None, people))
         guild = ctx.guild
-        role = discord.utils.get(guild.roles, name=team.name)
+        role = discord.utils.get(guild.roles, name=group.name)
         if not role:
-            logging.error(f"Not found role {team.name}")
+            logging.error(f"Not found role {group.name}")
             return
         for p in people:
             member: Member = guild.get_member(p.discord_id)
-            DB.create_invitation(p.discord_id, team.name)
+            DB.create_invitation(p.discord_id, group.name)
             await member.send(
-                f"Has sido invitado al grupo {team.name}\nPara formar parte del grupo usa el comando eps!join {team.name}")
+                f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
 
     async def join_command(self, ctx):
         from src.modules.facades import ContextFacade
@@ -215,29 +215,29 @@ class DiscordBot:
         elif user.group_name is not None:
             logging.error(f"User {fac.get_author().name} ya está en un grupo: {user.group_name}")
             ctx.send(txt.USER_ALREADY_IN_TEAM(user.group_name))
-        team_name = fac.get_message().split()[1]
-        invitation = DB.get_invitation(user.discord_id, team_name)
+        group_name = fac.get_message().split()[1]
+        invitation = DB.get_invitation(user.discord_id, group_name)
         if not invitation:
-            logging.error(f"User {fac.get_author().name} no tiene invitaciones del grupo {team_name}.")
-            ctx.send(txt.NOT_ALLOWED_TEAM(team_name))
+            logging.error(f"User {fac.get_author().name} no tiene invitaciones del grupo {group_name}.")
+            ctx.send(txt.NOT_ALLOWED_TEAM(group_name))
             return
         _, invitation = invitation
-        if invitation.group_name != team_name:
-            logging.error(f"Illegal Statement: {team_name} must be {invitation.group_name}")
+        if invitation.group_name != group_name:
+            logging.error(f"Illegal Statement: {group_name} must be {invitation.group_name}")
             ctx.send(txt.ERROR_SERVER)
             return
-        logging.info(f"{fac.get_author().name} invitation del grupo {team_name}")
+        logging.info(f"{fac.get_author().name} invitation del grupo {group_name}")
         if not DB.accept_invitation(invitation.user_id, invitation.group_name):
             logging.error(f"Invitación no encontrada")
             ctx.send(txt.ERROR_SERVER)
             return
-        team = DB.get_group(invitation.group_name)
-        team.add_user(user.discord_id)
-        DB.create_or_update_group(team)
-        user.group_name = team_name
+        group = DB.get_group(invitation.group_name)
+        group.add_user(user.discord_id)
+        DB.create_or_update_group(group)
+        user.group_name = group_name
         DB.create_or_update_user(user)
         guild = ctx.guild
-        role = discord.utils.get(guild.roles, name=team.name)
+        role = discord.utils.get(guild.roles, name=group.name)
         member = guild.get_member(user.discord_id)
         logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
         await member.add_roles(role)
@@ -372,4 +372,12 @@ class DiscordBot:
         role = discord.utils.get(ctx.guild.roles, name=group.name)
         member = ctx.guild.get_member(user.discord_id)
         await member.remove_roles(role)
+        if group.size() == 0:
+            chanels = list(filter(lambda x: role in x.overwrites , ctx.guild.channels))
+            # if the channel exists
+            for chanel in chanels:
+                print(chanel.overwrites)
+                await chanel.delete()
+            DB.delete_group(group.name)
+            role.delete()
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
