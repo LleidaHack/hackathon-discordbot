@@ -121,7 +121,7 @@ class Firebase:
         if invitation:
             user_id, invitation = invitation
             invitation.accept()
-            todo_ref.document(user_id).set(invitation)
+            todo_ref.document(user_id).set(invitation.__dict__)
             return True
         return False
 

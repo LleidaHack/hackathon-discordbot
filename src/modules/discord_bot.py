@@ -202,7 +202,7 @@ class DiscordBot:
 
     async def start_register(self, author, ctx=None):
         import src.texts.login_text as login_texts
-        if ctx.guild:
+        if ctx and ctx.guild:
             await ctx.send(login_texts.PM_SENDED)
         user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
@@ -250,6 +250,8 @@ class DiscordBot:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
                     await user.send(login_texts.USER_NO_GROUP(user.name, user.discriminator))
 
+                role_hacker = discord.utils.get(guild.roles, name=os.getenv("HACKER_ROLE"))
+                await member.add_roles(role_hacker)
 
                 DB.create_or_update_user(discord_user)
                 # Creacion usuario
