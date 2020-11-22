@@ -69,6 +69,10 @@ class DiscordBot:
         async def joke(ctx):
             await self.joke_command(ctx)
 
+        @self.client.command()
+        async def rpsls(ctx, option):
+            await self.rpsls_command(ctx)
+
         @self.client.event
         async def on_member_join(member):
             import src.texts.login_text as login_texts
@@ -334,6 +338,37 @@ class DiscordBot:
         response = random.choice(texts.jokes)
         await ctx.channel.send(response)
 
+    async def rpsls_command(self, ctx):
+        options = [
+            'Rock',
+            'Paper',
+            'Scissors',
+            'Lizard',
+            'Spock'
+        ]
+        win_conditions =    [   ('Paper','disaproves','Spock'), 
+                                ('Paper','covers','Rock'), 
+                                ('Rock','crushes','Scissors'),
+                                ('Rock','crushes','Lizard'),
+                                ('Lizard','eats','Paper'),
+                                ('Lizard','poisons','Spock'),
+                                ('Spock','vaporizes','Rock'),
+                                ('Spock','smashes','Scissors'),
+                                ('Scissors','cuts','Paper'),
+                                ('Scissors','decapicate','Lizard')
+                            ]
+        player_choice = ctx.message.content.split()[1]
+        if player_choice in options:
+            bot_choice = random.choice(options)
+            if player_choice == bot_choice:
+                await ctx.channel.send('Ni pa ti ni pa mi, empate.:exploding_head: '+player_choice+' shake hands '+bot_choice)
+            for i in win_conditions:
+                if (bot_choice == i[0] and player_choice == i[2]):
+                    await ctx.channel.send('Lo siento pero... He ganado:sunglasses: '+i[0]+' '+i[1]+' '+i[2])
+                if (player_choice == i[0] and bot_choice == i[2]):
+                    await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
+        else:
+            await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
