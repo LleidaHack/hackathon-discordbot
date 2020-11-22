@@ -295,8 +295,8 @@ class DiscordBot:
 
         pass
 
-    @group_required
     @authorization_required
+    @group_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
         from typing import Union
@@ -392,8 +392,8 @@ class DiscordBot:
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
-    @group_required
     @authorization_required
+    @group_required
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
