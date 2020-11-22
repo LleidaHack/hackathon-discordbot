@@ -90,7 +90,7 @@ class DiscordBot:
             for message in messages:
                 try:
                    await message.delete()
-                   time.sleep(0.75)
+                   time.sleep(1)
                 except:
                     pass
 
