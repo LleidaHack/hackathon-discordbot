@@ -288,11 +288,11 @@ class DiscordBot:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, group.name,email)
                     logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
                     await member.add_roles(role)
-                    await user.send(login_texts.USER_HAS_GROUP)
+                    await user.send(login_texts.USER_HAS_GROUP(discord_group.name))
 
                 else:
                     discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
-                    await user.send(login_texts.USER_NO_GROUP)
+                    await user.send(login_texts.USER_NO_GROUP(user.name, user.discriminator))
 
 
                 DB.create_or_update_user(discord_user)
