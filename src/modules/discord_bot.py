@@ -20,7 +20,7 @@ DB = Firebase()
 
 def authorization_required(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         import src.texts.auth as txt
         ctx = args[1] # 0: self, 1: ctx
         user = DB.get_user(discord_id=ctx.message.author.id)
@@ -58,22 +58,18 @@ class DiscordBot:
         async def reply(ctx, num, reply):
             await self.reply_command(ctx, num, reply)
 
-        @authorization_required
         @self.client.command()
         async def create(ctx):
             await self.create_command(ctx)
 
-        @authorization_required
         @self.client.command()
         async def invite(ctx):
             await self.invite_command(ctx)
 
-        @authorization_required
         @self.client.command()
         async def join(ctx):
             await self.join_command(ctx)
 
-        @authorization_required
         @self.client.command()
         async def leave(ctx):
             await self.leave_command(ctx)
@@ -132,6 +128,7 @@ class DiscordBot:
         await ctx.send(texts.GLOBAL_HELP_MESSAGE, delete_after=20)
         await ctx.author.send(embed=texts.EMBED_HELP_MESSAGE)
 
+    @authorization_required
     async def create_command(self, ctx):
         import src.texts.create_texts as texts
         user = DB.get_user(discord_id=ctx.message.author.id)
@@ -181,6 +178,7 @@ class DiscordBot:
             if channel.name == name:
                 return channel.id
 
+    @authorization_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
         from typing import Union
@@ -220,6 +218,7 @@ class DiscordBot:
             await member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
 
+    @authorization_required
     async def join_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.join_texts as txt
@@ -379,6 +378,8 @@ class DiscordBot:
                     await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
         else:
             await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
+
+    @authorization_required
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
