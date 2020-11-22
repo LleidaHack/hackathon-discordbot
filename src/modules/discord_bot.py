@@ -315,7 +315,7 @@ class DiscordBot:
 
         people = list(filter(lambda x: x is not None or not "", people))
         logging.info(f"Gente encontrada: {[p.username for p in people]}")
-        if group.size() + len(people) >= 4:
+        if group.size() + len(people) > 4:
             logging.error(
                 f"Usuario {username} quiere añadir al grupo {group.name} {len(people)} personas pero ya son {group.size()}")
             await ctx.send(txt.TEAM_OVERFLOW)
