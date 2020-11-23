@@ -13,6 +13,7 @@ from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.commands.login import LoginCommand
+from src.modules.commands.create import CreateCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
@@ -97,8 +98,11 @@ class DiscordBot:
 
         @self.client.command()
         async def create(ctx):
-            await self.create_command(ctx)
-
+            if not ctx.guild:
+                guild = self.client.get_guild(int(os.getenv('GUILD')))
+            group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
+            create: Create = CreateCommand(ctx, DB, ctx.author, group_creator).apply()
+            await create.create()
         @self.client.command()
         async def invite(ctx):
             await self.invite_command(ctx)
