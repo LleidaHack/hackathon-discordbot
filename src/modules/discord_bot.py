@@ -127,8 +127,8 @@ class DiscordBot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
                 group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
-                login: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"), group_creator)
-                await login.finish_login(message.author, message.content)
+                login_manager: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"), group_creator)
+                await login_manager.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
 
         ################# ADMIN COMMANDS ###################################
