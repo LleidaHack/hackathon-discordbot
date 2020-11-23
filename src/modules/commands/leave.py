@@ -17,29 +17,37 @@ class LeaveCommand(FireBaseCommand):
     async def apply(self):
         from src.modules.facades import ContextFacade
         import src.texts.leave_texts as txt
-        if not ctx.guild:
-            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            ctx.author = ctx.guild.get_member(ctx.author.id)
-        fac: ContextFacade = ContextFacade(ctx)
+        fac: ContextFacade = ContextFacade(self.ctx)
         logging.info(f"leave command por {fac.get_author().name}")
-        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        group = DB.get_group(user.group_name)
+        user: ModelUser = self.DB.get_user_from_id(fac.get_author().id)
+        group = self.DB.get_group(user.group_name)
         if not group:
             logging.error(f"No se ha encontrado el grupo {user.group_name} del usuario {user.get_full_name()}.")
-            await ctx.send(txt.SERVER_ERROR)
+            await self.ctx.send(txt.SERVER_ERROR)
             return
-        group.remove_user(user.discord_id)
-        user.group_name = None
-        DB.create_or_update_user(user)
-        DB.create_or_update_group(group)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
-        member = ctx.guild.get_member(user.discord_id)
+        self.remove_user_from_group(user, group)
+        role = discord.utils.get(self.ctx.guild.roles, name=group.name)
+        member = self.ctx.guild.get_member(user.discord_id)
         await member.remove_roles(role)
         if group.size() == 0:
-            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
-            # if the channel exists
-            for chanel in chanels:
-                await chanel.delete()
-            DB.delete_group(group.name)
-            await role.delete()
-        await ctx.send(txt.LEAVE_MSG(member.name, role.name))
+            await self.remove_group_chanels(role)
+            await self.remove_empty_group(group, role)
+        await self.ctx.send(txt.LEAVE_MSG(member.name, role.name))
+
+    def remove_user_from_group(self, user, group):
+        group.remove_user(user.discord_id)
+        user.group_name = None
+        self.DB.create_or_update_user(user)
+        self.DB.create_or_update_group(group)
+
+    async def remove_empty_group(self, group, role):
+        self.DB.delete_group(group.name)
+        await role.delete()
+        
+    async def remove_group_chanels(self, role):        
+        chanels = list(filter(lambda x: role in x.overwrites, self.ctx.guild.channels))
+        # if the channel exists
+        for chanel in chanels:
+            logging.error(f"Deleting Chanel")
+            await chanel.delete()
+        

@@ -49,8 +49,9 @@ class FinishLogin:
         await member.add_roles(role_hacker)
 
     async def create_discord_user(self, email, web_group, member, discord_user):
-        if not web_group:
+        if web_group is None:
             await self.create_alone_user(email, discord_user)
+            return
         await self.create_user_of_group(email, web_group, member, discord_user)
 
     async def create_user_of_group(self, email, web_group, member, discord_user: DiscordUser):

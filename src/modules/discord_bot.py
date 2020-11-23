@@ -1,11 +1,16 @@
 #!/usr/bin/python3
 import logging
 import os
+from functools import wraps
+from typing import List, Optional
 
 import discord
+from discord import Member
 from discord.ext import commands as discord_commands
+from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
+from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
@@ -18,6 +23,22 @@ from src.modules.pools.questions import QuestionPool
 from src.modules.utils import GroupCreator
 
 DB = Firebase()
+
+
+def group_required(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        import src.texts.auth as txt
+        ctx = args[1]
+        user = DB.get_user(discord_id=ctx.message.author.id)
+        if user.group_name is None:
+            logging.info("Usuario sin grupo")
+            await ctx.send(txt.NOT_INGROUP_ERROR(ctx.author))
+            return
+        logging.info(f"Usuario con grupo")
+        return await func(*args)
+
+    return wrapper
 
 
 class DiscordBot:
@@ -84,6 +105,7 @@ class DiscordBot:
         async def leave(ctx):
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.author = ctx.guild.get_member(ctx.author.id)
             leave: LeaveCommand = LeaveCommand(ctx, DB)
             await leave.apply()
 
@@ -180,3 +202,34 @@ class DiscordBot:
         logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
+
+    @group_required
+    async def leave_command(self, ctx):
+        from src.modules.facades import ContextFacade
+        import src.texts.leave_texts as txt
+        if not ctx.guild:
+            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            ctx.author = ctx.guild.get_member(ctx.author.id)
+        fac: ContextFacade = ContextFacade(ctx)
+        logging.info(f"leave command por {fac.get_author().name}")
+        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
+        group = DB.get_group(user.group_name)
+        if not group:
+            logging.error(f"No se ha encontrado el grupo {user.group_name} del usuario {user.get_full_name()}.")
+            await ctx.send(txt.SERVER_ERROR)
+            return
+        group.remove_user(user.discord_id)
+        user.group_name = None
+        DB.create_or_update_user(user)
+        DB.create_or_update_group(group)
+        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        member = ctx.guild.get_member(user.discord_id)
+        await member.remove_roles(role)
+        if group.size() == 0:
+            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
+            # if the channel exists
+            for chanel in chanels:
+                await chanel.delete()
+            DB.delete_group(group.name)
+            await role.delete()
+        await ctx.send(txt.LEAVE_MSG(member.name, role.name))
