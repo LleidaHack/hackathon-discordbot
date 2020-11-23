@@ -13,6 +13,7 @@ from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.commands.create import CreateCommand
+from src.modules.commands.invite import InviteCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
@@ -91,6 +92,9 @@ class DiscordBot:
 
         @self.client.command()
         async def invite(ctx):
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            invite: InviteCommand = InviteCommand(ctx, DB)
             await self.invite_command(ctx)
 
         @self.client.command()

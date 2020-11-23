@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 from functools import wraps
+from types import TracebackType
+from typing import Optional
 
 from discord.ext.commands import Context
 
@@ -39,4 +41,22 @@ class FireBaseCommand(BaseCommand, ABC):
                 return
             logging.info(f"Usuario registrado")
             return await func(*args)
+
         return wrapper
+
+
+class CommandError(BaseException):
+
+    def __init__(self, *args: object, **kwargs) -> None:
+        super().__init__(*args)
+        if 'msg' in kwargs:
+            self.msg = kwargs['msg']
+
+    def __str__(self) -> str:
+        return super().__str__() + f": {self.msg}"
+
+    def __repr__(self) -> str:
+        return super().__repr__()
+
+    def with_traceback(self, tb: Optional[TracebackType]) -> BaseException:
+        return super().with_traceback(tb)
