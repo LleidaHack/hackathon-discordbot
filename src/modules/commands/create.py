@@ -1,9 +1,13 @@
 from discord import User
 from discord.ext.commands import Context
-from src.crud.firebase import Firebase
-from src.modules.commands import FireBaseCommand
+
 import src.texts.create_texts as texts
+from src.crud.firebase import Firebase
 from src.models.group import Group
+from src.modules.commands import FireBaseCommand
+from src.modules.utils import GroupCreator
+
+
 class CreateCommand(FireBaseCommand):
 
     def __init__(self, context: Context, database: Firebase, user: User, group_creator: GroupCreator):
@@ -12,24 +16,21 @@ class CreateCommand(FireBaseCommand):
         self.group_name = None
         self.group_creator = group_creator
 
-    def apply(self):
+    async def apply(self):
         msg = self.ctx.message.content.split()
-        if len(msg) > 1:
-            self.group_name = msg[1:]
-
-    async def create(self):
-        if not self.group_name:
-            await self.context.send(texts.SINTAXIS_ERROR)
+        if len(msg) < 2:
+            await self.ctx.send(texts.SINTAXIS_ERROR)
             return
+        self.group_name = msg[1:]
         if self.group_exists():
-            await self.context.send(texts.GROUP_ALREADY_EXISTS_ERROR)
+            await self.ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
             return
 
-        await self.context.send(texts.STARTING_CREATE_GROUP)
-        group = Group(name=self.group_name)
+        await self.ctx.send(texts.STARTING_CREATE_GROUP)
         user = self.DB.get_user(discord_id=self.member.id)
         await self.group_creator.create_group(self.group_name, self.member, user)
-        await self.context.send(texts.CREATED_GROUP)
-        return
+        await self.ctx.send(texts.CREATED_GROUP)
+
     def group_exists(self):
-        return self.DB.recover_web_group(name=self.group_name) is not None or self.DB.get_group(name=self.group_name) is not None
+        return self.DB.recover_web_group(self.group_name) is not None or \
+               self.DB.get_group(self.group_name) is not None
