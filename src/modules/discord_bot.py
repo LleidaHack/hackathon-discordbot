@@ -13,6 +13,7 @@ from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.commands.create import CreateCommand
+from src.modules.commands.invite import InviteCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
@@ -91,7 +92,10 @@ class DiscordBot:
 
         @self.client.command()
         async def invite(ctx):
-            await self.invite_command(ctx)
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            invite: InviteCommand = InviteCommand(ctx, DB)
+            await invite.apply()
 
         @self.client.command()
         async def join(ctx):
@@ -141,43 +145,6 @@ class DiscordBot:
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
-
-    @group_required
-    async def invite_command(self, ctx: Context):
-        import src.texts.invite_texts as txt
-        if not ctx.guild:
-            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-        username: str = ctx.author.name
-        logging.info(f"Comando 'invite' recibido por usuario {username}")
-        group: Optional[Group] = DB.get_group(DB.get_user(ctx.author.id).group_name)
-        people = list(map(lambda x: x.split('#'), ctx.message.content.split()[1:]))
-        people: List[ModelUser] = list(map(lambda x: DB.get_user(username=x[0], discriminator=x[1]), people))
-        if not any(people):
-            logging.error("Gente no encontrada.")
-            await ctx.send(txt.NOT_FOUND_PEOPLE)
-            return
-
-        people = list(filter(lambda x: x is not None or not "", people))
-        logging.info(f"Gente encontrada: {[p.username for p in people]}")
-        if group.size() + len(people) > 4:
-            logging.error(
-                f"Usuario {username} quiere añadir al grupo {group.name} {len(people)} personas pero ya son {group.size()}")
-            await ctx.send(txt.TEAM_OVERFLOW)
-            return
-        for already_member in filter(lambda x: x.group_name is not None, people):
-            logging.info(f"{already_member} está ya en otro grupo: {already_member.group_name}")
-            await ctx.send(txt.ALREADY_IN_A_GROUP(already_member.username, already_member.group_name))
-        people = list(filter(lambda x: x.group_name is None, people))
-        guild = ctx.guild
-        role = discord.utils.get(guild.roles, name=group.name)
-        if not role:
-            logging.error(f"Not found role {group.name}")
-            return
-        for p in people:
-            member: Member = guild.get_member(p.discord_id)
-            DB.create_invitation(p.discord_id, group.name)
-            await member.send(
-                f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
 
     async def join_command(self, ctx):
         from src.modules.facades import ContextFacade
@@ -235,3 +202,34 @@ class DiscordBot:
         logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
+
+    @group_required
+    async def leave_command(self, ctx):
+        from src.modules.facades import ContextFacade
+        import src.texts.leave_texts as txt
+        if not ctx.guild:
+            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            ctx.author = ctx.guild.get_member(ctx.author.id)
+        fac: ContextFacade = ContextFacade(ctx)
+        logging.info(f"leave command por {fac.get_author().name}")
+        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
+        group = DB.get_group(user.group_name)
+        if not group:
+            logging.error(f"No se ha encontrado el grupo {user.group_name} del usuario {user.get_full_name()}.")
+            await ctx.send(txt.SERVER_ERROR)
+            return
+        group.remove_user(user.discord_id)
+        user.group_name = None
+        DB.create_or_update_user(user)
+        DB.create_or_update_group(group)
+        role = discord.utils.get(ctx.guild.roles, name=group.name)
+        member = ctx.guild.get_member(user.discord_id)
+        await member.remove_roles(role)
+        if group.size() == 0:
+            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
+            # if the channel exists
+            for chanel in chanels:
+                await chanel.delete()
+            DB.delete_group(group.name)
+            await role.delete()
+        await ctx.send(txt.LEAVE_MSG(member.name, role.name))
