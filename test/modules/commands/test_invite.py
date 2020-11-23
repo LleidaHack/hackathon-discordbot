@@ -11,6 +11,7 @@ class MockContext(Context):
     def __init__(self, **attrs):
         pass
 
+
 class MockFirebase(Firebase):
 
     def __init__(self, **attrs):

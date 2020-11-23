@@ -12,8 +12,6 @@ from src.crud.firebase import Firebase
 class BaseCommand(ABC):
 
     def __init__(self, context: Context):
-        if not type(context) is Context:
-            raise Exception
         self.ctx = context
 
     @abstractmethod

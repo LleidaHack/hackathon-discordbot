@@ -37,16 +37,16 @@ class InviteCommand(FireBaseCommand):
         people = await self.check_people_availability(people)
         return people
 
-    async def get_people_names(self, content: str):
+    def get_people_names(self, content: str):
         start = len('eps!join')
         content = content[start + 1:].split()
         res = []
-        actual = ''
+        actual = []
         for string in content:
-            if '#' not in string:
-                actual += string
-            else:
-                res.append(actual + string)
+            actual.append(string)
+            if '#' in string:
+                res.append(' '.join(actual))
+                actual = []
         return res
 
     async def check_people_availability(self, people):
