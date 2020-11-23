@@ -121,7 +121,8 @@ class DiscordBot:
             if self.users_pool.has(message.author) and not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
-                await FinishLogin(guild, DB, self.users_pool).finish_login(message.author, message.content)
+                await FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE")).finish_login(message.author,
+                                                                                                     message.content)
                 logging.info(f"Email checked: {message.content}")
 
         ################# ADMIN COMMANDS ###################################
