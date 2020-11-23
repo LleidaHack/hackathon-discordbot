@@ -349,25 +349,3 @@ class DiscordBot:
             await role.delete()
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
 
-    async def create_group_on_server(self, group, user, guild):
-        logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
-        DB.create_or_update_group(group)
-        logging.info("[COMMAND CREATE - OK] Creando rol")
-
-        await guild.create_role(name=group.name)
-        role = discord.utils.get(guild.roles, name=group.name)
-        logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
-        await user.add_roles(role)
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            role: discord.PermissionOverwrite(read_messages=True)
-        }
-        logging.info("[COMMAND CREATE - OK] Localizando categoria de equipos")
-
-        for cat in guild.categories:
-            if str(cat.id) == os.getenv('TEAMS_CATEGORY_ID'):
-                logging.info("[COMMAND CREATE - OK] Creando canales de chat y voz")
-                await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
-                await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
-                break
