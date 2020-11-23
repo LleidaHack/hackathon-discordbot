@@ -1,1 +1,1 @@
-from .create_group import CreateGroup
+from .create_group import GroupCreator
