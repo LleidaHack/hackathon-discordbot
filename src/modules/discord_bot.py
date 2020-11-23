@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import logging
 import os
-import random
 from functools import wraps
 from typing import List, Optional
 
@@ -11,9 +10,14 @@ from discord.ext import commands as discord_commands
 from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
-from src.models.invitation import Invitation
 from src.models.group import Group
 from src.models.user import User as ModelUser
+from src.modules.commands.login import LoginCommand
+from src.modules.commands.question_ask import AskCommand, ReplyCommand
+from src.modules.login import StartLogin, FinishLogin
+from src.modules.pools.authentication import AuthenticationPool
+from src.modules.pools.questions import QuestionPool
+from src.modules.utils import GroupCreator
 
 DB = Firebase()
 
@@ -33,6 +37,7 @@ def authorization_required(func):
 
     return wrapper
 
+
 def group_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -47,6 +52,8 @@ def group_required(func):
         return await func(*args)
 
     return wrapper
+
+
 class DiscordBot:
     def __init__(self):
         logging.info("Reading bot config data")
@@ -58,33 +65,35 @@ class DiscordBot:
         self.client.remove_command('help')
         logging.info("Reading bot functions")
 
-        self.questions = {}
-        self.question_num = 0
-        self.user_registering = {}
+        self.questions = QuestionPool()
+        self.users_pool = AuthenticationPool()
 
         @self.client.command()
         async def help(ctx):
-            await self.help_command(ctx)
+            from .commands.help import HelpCommand
+            await HelpCommand(ctx).apply()
 
         @self.client.command()
         async def ask(ctx, question):
-            await self.ask_command(ctx, question)
+            await AskCommand(ctx, question, self.questions, self.client).apply()
 
         @self.client.command()
         async def reply(ctx, num, reply):
-            await self.reply_command(ctx, num, reply)
+            await ReplyCommand(ctx, self.questions, num, reply).apply()
 
         @self.client.command()
         async def joke(ctx):
-            await self.joke_command(ctx)
+            from src.modules.commands.joke import JokeCommand
+            await JokeCommand(ctx).apply()
 
         @self.client.command()
-        async def rpsls(ctx, option):
-            await self.rpsls_command(ctx)
+        async def rpsls(ctx):
+            from src.modules.commands.rpsls import GameCommand
+            await GameCommand(ctx).apply()
 
         @self.client.command()
         async def login(ctx):
-            await self.start_register(ctx.author, ctx)
+            await LoginCommand(ctx, DB, ctx.author, self.users_pool).apply()
 
         @self.client.command()
         async def create(ctx):
@@ -102,19 +111,23 @@ class DiscordBot:
         async def leave(ctx):
             await self.leave_command(ctx)
 
-
-
         @self.client.event
         async def on_member_join(member):
             import src.texts.login_text as login_texts
             await member.send(embed=login_texts.WELCOME_MESSAGE)
-            await self.start_register(member)
+            await StartLogin(DB, self.users_pool).start_login(member)
 
         @self.client.listen('on_message')
         async def on_message(message):
-            if message.author in self.user_registering and not message.guild and not message.author.bot:
+            msg: str = message.content
+            if not msg.startswith("eps!") and self.users_pool.has(message.author) and \
+                    not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
-                await self.login(message.author, message.content, message.guild)
+                guild = self.client.get_guild(int(os.getenv('GUILD')))
+                group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
+                login_manager: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"),
+                                                         group_creator)
+                await login_manager.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
 
         ################# ADMIN COMMANDS ###################################
@@ -134,134 +147,6 @@ class DiscordBot:
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
-
-    async def help_command(self, ctx):
-        import src.texts.help_texts as texts
-
-        logging.info("Enviando mensaje de ayuda")
-        await ctx.send(texts.GLOBAL_HELP_MESSAGE, delete_after=20)
-        await ctx.author.send(embed=texts.EMBED_HELP_MESSAGE)
-
-
-    async def ask_command(self, ctx, question):
-        import src.texts.ask_reply_texts as ask_texts
-        logging.info("Enviando pregunta")
-        await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-        channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
-        channel = self.client.get_channel(channelId)
-        self.questions[self.question_num] = ctx.author
-        await channel.send('#' + str(self.question_num) + '  >  ' + question)
-        self.question_num += 1
-
-    async def reply_command(self, ctx, num, reply):
-        await self.questions[int(num)].send('La respuesta a tu pregunta fue:  ' + reply)
-
-    async def joke_command(self, ctx):
-        import src.texts.jokes_texts as texts
-
-        response = random.choice(texts.jokes)
-        await ctx.channel.send(response)
-
-    async def rpsls_command(self, ctx):
-        options = [
-            'Rock',
-            'Paper',
-            'Scissors',
-            'Lizard',
-            'Spock'
-        ]
-        win_conditions =    [   ('Paper','disaproves','Spock'),
-                                ('Paper','covers','Rock'),
-                                ('Rock','crushes','Scissors'),
-                                ('Rock','crushes','Lizard'),
-                                ('Lizard','eats','Paper'),
-                                ('Lizard','poisons','Spock'),
-                                ('Spock','vaporizes','Rock'),
-                                ('Spock','smashes','Scissors'),
-                                ('Scissors','cuts','Paper'),
-                                ('Scissors','decapicate','Lizard')
-                            ]
-        player_choice = ctx.message.content.split()[1]
-        if player_choice in options:
-            bot_choice = random.choice(options)
-            if player_choice == bot_choice:
-                await ctx.channel.send('Ni pa ti ni pa mi, empate.:exploding_head: '+player_choice+' shake hands '+bot_choice)
-            for i in win_conditions:
-                if (bot_choice == i[0] and player_choice == i[2]):
-                    await ctx.channel.send('Lo siento pero... He ganado:sunglasses: '+i[0]+' '+i[1]+' '+i[2])
-                if (player_choice == i[0] and bot_choice == i[2]):
-                    await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
-        else:
-            await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
-
-    @staticmethod
-    def get_channel_id(ctx, name=None):
-        for channel in ctx.guild.channels:
-            if channel.name == name:
-                return channel.id
-
-    async def start_register(self, author, ctx=None):
-        import src.texts.login_text as login_texts
-        if ctx and ctx.guild:
-            await ctx.send(login_texts.PM_SENDED)
-        user_discord = DB.get_user(discord_id=author.id)
-        if not user_discord:
-            logging.info("Enviando mensaje de inicio de registro a " + str(author))
-
-            await author.send(login_texts.REGISTER_MESSAGE)
-            self.user_registering[author] = 0
-        else:
-            await author.send(login_texts.REGISTER_ALREADY_REGISTER)
-            pass
-
-    async def login(self, user, email, guild):
-        import src.texts.login_text as login_texts
-        logging.info("Email test")
-        await user.send(login_texts.REGISTER_STARTING)
-        web_user, group = DB.recover_web_group_by_user(email)
-        if web_user:
-            logging.info(f"Usuario localizado {web_user.nickname}")
-            discord_user = DB.get_user(email=email)
-            if discord_user:
-                await user.send(login_texts.REGISTER_ALREADY_REGISTER)
-                pass
-            else:
-                guild = self.client.get_guild(int(os.getenv('GUILD')))
-                member = guild.get_member(user.id)
-                logging.info(f"Miembro de la Guild: {member.nick}")
-                if not guild:
-                    return
-                if group:
-                    discord_group = DB.get_group(group.name)
-                    logging.info(f"Se ha detectado el grupo {discord_group}")
-                    if not discord_group:
-                        await  self.create_group_on_server(group, member, guild)
-                        discord_group = DB.get_group(group.name)
-                    role = discord.utils.get(guild.roles, name=group.name)
-
-                    discord_group.members.append(user.id)
-                    DB.create_or_update_group(discord_group)
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
-                    logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
-                    await member.add_roles(role)
-                    await user.send(login_texts.USER_HAS_GROUP(discord_group.name))
-
-                else:
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
-                    await user.send(login_texts.USER_NO_GROUP(user.name, user.discriminator))
-
-                role_hacker = discord.utils.get(guild.roles, name=os.getenv("HACKER_ROLE"))
-                await member.add_roles(role_hacker)
-
-                DB.create_or_update_user(discord_user)
-                # Creacion usuario
-                await user.send(login_texts.REGISTER_OK)
-        else:
-            logging.info("No se ha encontrado al usuario")
-            await user.send(login_texts.REGISTER_KO)
-
-            pass
-        self.user_registering.pop(user)
 
     @authorization_required
     async def create_command(self, ctx):
@@ -295,16 +180,12 @@ class DiscordBot:
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
 
-        pass
-
     @authorization_required
     @group_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
-        from typing import Union
         if not ctx.guild:
             ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
         group: Optional[Group] = DB.get_group(DB.get_user(ctx.author.id).group_name)
@@ -355,7 +236,8 @@ class DiscordBot:
         if len(msg) == 1:
             invitations = DB.get_invitations(user.discord_id)
             if len(invitations) > 1:
-                logging.error(f"User {fac.get_author().name} tiene más de una invitacion pero no ha especificado equipo.")
+                logging.error(
+                    f"User {fac.get_author().name} tiene más de una invitacion pero no ha especificado equipo.")
                 await ctx.send(txt.MANY_INVITES(list(map(lambda x: x.group_name, invitations))))
                 return
             if len(invitations) == 0:
@@ -402,7 +284,6 @@ class DiscordBot:
         if not ctx.guild:
             ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
             ctx.author = ctx.guild.get_member(ctx.author.id)
-
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"leave command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
@@ -419,35 +300,10 @@ class DiscordBot:
         member = ctx.guild.get_member(user.discord_id)
         await member.remove_roles(role)
         if group.size() == 0:
-            chanels = list(filter(lambda x: role in x.overwrites , ctx.guild.channels))
+            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
             # if the channel exists
             for chanel in chanels:
                 await chanel.delete()
             DB.delete_group(group.name)
             await role.delete()
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
-
-    async def create_group_on_server(self, group, user, guild):
-        logging.info("[COMMAND CREATE - OK] Solicitando creacion de grupo")
-        DB.create_or_update_group(group)
-        logging.info("[COMMAND CREATE - OK] Creando rol")
-
-        await guild.create_role(name=group.name)
-        role = discord.utils.get(guild.roles, name=group.name)
-        logging.info("[COMMAND CREATE - OK] Añadiendo el usuario al rol")
-        await user.add_roles(role)
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            role: discord.PermissionOverwrite(read_messages=True)
-        }
-        logging.info("[COMMAND CREATE - OK] Localizando categoria de equipos")
-
-        for cat in guild.categories:
-            if str(cat.id) == os.getenv('TEAMS_CATEGORY_ID'):
-                logging.info("[COMMAND CREATE - OK] Creando canales de chat y voz")
-                await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
-                await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
-                break
-
-
