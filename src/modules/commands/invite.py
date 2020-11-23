@@ -32,21 +32,21 @@ class InviteCommand(FireBaseCommand):
             logging.warning(f"Ha saltado el error {er}")
 
     async def get_people(self, discord_user, group):
-        people_names = await self.get_people_names(self.ctx.message.content)
+        people_names = self.get_people_names(self.ctx.message.content)
         people: List[ModelUser] = await self.get_DB_people(people_names)
         await self.check_group_overflow(discord_user, group, people)
         people = await self.check_people_availability(people)
         return people
 
     def get_people_names(self, content: str):
-        start = len('eps!join')
+        start = len('eps!invite')
         content = content[start + 1:].split()
         res = []
         actual = []
         for string in content:
             actual.append(string)
             if '#' in string:
-                res.append(' '.join(actual))
+                res.append(' '.join(actual).split('#'))
                 actual = []
         return res
 
