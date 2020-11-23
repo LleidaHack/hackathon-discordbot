@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 import logging
 import os
-import random
 from functools import wraps
 from typing import List, Optional
 
@@ -11,9 +10,10 @@ from discord.ext import commands as discord_commands
 from discord.ext.commands import Context
 
 from src.crud.firebase import Firebase
-from src.models.invitation import Invitation
 from src.models.group import Group
 from src.models.user import User as ModelUser
+from src.modules.commands.question_ask import AskCommand, ReplyCommand
+from src.modules.pools.questions import QuestionPool
 
 DB = Firebase()
 
@@ -33,6 +33,7 @@ def authorization_required(func):
 
     return wrapper
 
+
 def group_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -47,6 +48,8 @@ def group_required(func):
         return await func(*args)
 
     return wrapper
+
+
 class DiscordBot:
     def __init__(self):
         logging.info("Reading bot config data")
@@ -58,29 +61,31 @@ class DiscordBot:
         self.client.remove_command('help')
         logging.info("Reading bot functions")
 
-        self.questions = {}
-        self.question_num = 0
+        self.questions = QuestionPool()
         self.user_registering = {}
 
         @self.client.command()
         async def help(ctx):
-            await self.help_command(ctx)
+            from .commands.help import HelpCommand
+            await HelpCommand(ctx).apply()
 
         @self.client.command()
         async def ask(ctx, question):
-            await self.ask_command(ctx, question)
+            await AskCommand(ctx, question, self.questions, self.client).apply()
 
         @self.client.command()
         async def reply(ctx, num, reply):
-            await self.reply_command(ctx, num, reply)
+            await ReplyCommand(ctx, self.questions, num, reply).apply()
 
         @self.client.command()
         async def joke(ctx):
-            await self.joke_command(ctx)
+            from src.modules.commands.joke import JokeCommand
+            await JokeCommand(ctx).apply()
 
         @self.client.command()
-        async def rpsls(ctx, option):
-            await self.rpsls_command(ctx)
+        async def rpsls(ctx):
+            from src.modules.commands.rpsls import GameCommand
+            await GameCommand(ctx).apply()
 
         @self.client.command()
         async def login(ctx):
@@ -101,8 +106,6 @@ class DiscordBot:
         @self.client.command()
         async def leave(ctx):
             await self.leave_command(ctx)
-
-
 
         @self.client.event
         async def on_member_join(member):
@@ -135,71 +138,6 @@ class DiscordBot:
         logging.info("Starting bot!")
         self.client.run(self.token)
 
-    async def help_command(self, ctx):
-        import src.texts.help_texts as texts
-
-        logging.info("Enviando mensaje de ayuda")
-        await ctx.send(texts.GLOBAL_HELP_MESSAGE, delete_after=20)
-        await ctx.author.send(embed=texts.EMBED_HELP_MESSAGE)
-
-
-    async def ask_command(self, ctx, question):
-        import src.texts.ask_reply_texts as ask_texts
-        logging.info("Enviando pregunta")
-        await ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-        channelId = DiscordBot.get_channel_id(ctx, 'preguntas_participantes')
-        channel = self.client.get_channel(channelId)
-        self.questions[self.question_num] = ctx.author
-        await channel.send('#' + str(self.question_num) + '  >  ' + question)
-        self.question_num += 1
-
-    async def reply_command(self, ctx, num, reply):
-        await self.questions[int(num)].send('La respuesta a tu pregunta fue:  ' + reply)
-
-    async def joke_command(self, ctx):
-        import src.texts.jokes_texts as texts
-
-        response = random.choice(texts.jokes)
-        await ctx.channel.send(response)
-
-    async def rpsls_command(self, ctx):
-        options = [
-            'Rock',
-            'Paper',
-            'Scissors',
-            'Lizard',
-            'Spock'
-        ]
-        win_conditions =    [   ('Paper','disaproves','Spock'),
-                                ('Paper','covers','Rock'),
-                                ('Rock','crushes','Scissors'),
-                                ('Rock','crushes','Lizard'),
-                                ('Lizard','eats','Paper'),
-                                ('Lizard','poisons','Spock'),
-                                ('Spock','vaporizes','Rock'),
-                                ('Spock','smashes','Scissors'),
-                                ('Scissors','cuts','Paper'),
-                                ('Scissors','decapicate','Lizard')
-                            ]
-        player_choice = ctx.message.content.split()[1]
-        if player_choice in options:
-            bot_choice = random.choice(options)
-            if player_choice == bot_choice:
-                await ctx.channel.send('Ni pa ti ni pa mi, empate.:exploding_head: '+player_choice+' shake hands '+bot_choice)
-            for i in win_conditions:
-                if (bot_choice == i[0] and player_choice == i[2]):
-                    await ctx.channel.send('Lo siento pero... He ganado:sunglasses: '+i[0]+' '+i[1]+' '+i[2])
-                if (player_choice == i[0] and bot_choice == i[2]):
-                    await ctx.channel.send('Tu ganas :tired_face: '+i[0]+' '+i[1]+' '+i[2])
-        else:
-            await ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
-
-    @staticmethod
-    def get_channel_id(ctx, name=None):
-        for channel in ctx.guild.channels:
-            if channel.name == name:
-                return channel.id
-
     async def start_register(self, author, ctx=None):
         import src.texts.login_text as login_texts
         if ctx and ctx.guild:
@@ -207,12 +145,10 @@ class DiscordBot:
         user_discord = DB.get_user(discord_id=author.id)
         if not user_discord:
             logging.info("Enviando mensaje de inicio de registro a " + str(author))
-
             await author.send(login_texts.REGISTER_MESSAGE)
             self.user_registering[author] = 0
         else:
             await author.send(login_texts.REGISTER_ALREADY_REGISTER)
-            pass
 
     async def login(self, user, email, guild):
         import src.texts.login_text as login_texts
@@ -259,8 +195,6 @@ class DiscordBot:
         else:
             logging.info("No se ha encontrado al usuario")
             await user.send(login_texts.REGISTER_KO)
-
-            pass
         self.user_registering.pop(user)
 
     @authorization_required
@@ -295,16 +229,12 @@ class DiscordBot:
         logging.info("[COMMAND CREATE - OK] Informando all Ok")
         await ctx.send(texts.CREATED_GROUP)
 
-        pass
-
     @authorization_required
     @group_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
-        from typing import Union
         if not ctx.guild:
             ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-
         username: str = ctx.author.name
         logging.info(f"Comando 'invite' recibido por usuario {username}")
         group: Optional[Group] = DB.get_group(DB.get_user(ctx.author.id).group_name)
@@ -355,7 +285,8 @@ class DiscordBot:
         if len(msg) == 1:
             invitations = DB.get_invitations(user.discord_id)
             if len(invitations) > 1:
-                logging.error(f"User {fac.get_author().name} tiene más de una invitacion pero no ha especificado equipo.")
+                logging.error(
+                    f"User {fac.get_author().name} tiene más de una invitacion pero no ha especificado equipo.")
                 await ctx.send(txt.MANY_INVITES(list(map(lambda x: x.group_name, invitations))))
                 return
             if len(invitations) == 0:
@@ -402,7 +333,6 @@ class DiscordBot:
         if not ctx.guild:
             ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
             ctx.author = ctx.guild.get_member(ctx.author.id)
-
         fac: ContextFacade = ContextFacade(ctx)
         logging.info(f"leave command por {fac.get_author().name}")
         user: ModelUser = DB.get_user_from_id(fac.get_author().id)
@@ -419,7 +349,7 @@ class DiscordBot:
         member = ctx.guild.get_member(user.discord_id)
         await member.remove_roles(role)
         if group.size() == 0:
-            chanels = list(filter(lambda x: role in x.overwrites , ctx.guild.channels))
+            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
             # if the channel exists
             for chanel in chanels:
                 await chanel.delete()
@@ -449,5 +379,3 @@ class DiscordBot:
                 await guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
                 await guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
-
-
