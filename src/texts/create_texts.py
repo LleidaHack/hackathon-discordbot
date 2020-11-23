@@ -1,5 +1,5 @@
 NOT_REGISTERED_ERROR = "¡Ups! Parece que no estás conectado a tu cuenta de HackEPS. Escribe eps!register para volver a iniciar el proceso de registro."
-SINTAXIX_ERROR = "El comando para crear el equipo debe incluír el nombre del equipo. Vuelve a intentarlo con la sintaxis ```eps!create <Nombre del equipo``` o utiliza ```eps!help``` para más información."
+SINTAXIS_ERROR = "El comando para crear el equipo debe incluír el nombre del equipo. Vuelve a intentarlo con la sintaxis ```eps!create <Nombre del equipo``` o utiliza ```eps!help``` para más información."
 ALREADY_ON_GROUP_ERROR = "¡Más tranqulo hacker! Parece que ya estás en un grupo. Si necesitas cambiar de equipo, utiliza ```eps!leave``` para abandonar el equipo primero."
 GROUP_ALREADY_EXISTS_ERROR = "Parece que algún Hackepsito ya ha registrado este nombre de grupo... Prueba con otro :)"
 CREATED_GROUP = "¡EPSelente! ¡Grupo creado! Ya puedes invitar a tus compañeros de equipo con ```eps!invite <correo o discordTag>```. También te he preparado un cómodo canal de chat y voz para que compartas con tus compañeros."
