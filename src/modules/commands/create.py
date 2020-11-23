@@ -6,12 +6,9 @@ import src.texts.create_texts as texts
 from src.models.group import Group
 class CreateCommand(FireBaseCommand):
 
-    def __init__(self, context: Context, database: Firebase, user: User, guild_id: int, group_creator: GroupCreator):
+    def __init__(self, context: Context, database: Firebase, user: User, group_creator: GroupCreator):
         super().__init__(context, database)
         self.member = user
-        if not context.guild:
-            ctx.guild = self.client.get_guild(guild_id)
-            self.member = context.guild.get_member(user.id)
         self.group_name = None
         self.group_creator = group_creator
 
@@ -19,7 +16,6 @@ class CreateCommand(FireBaseCommand):
         msg = self.ctx.message.content.split()
         if len(msg) > 1:
             self.group_name = msg[1:]
-
 
     async def create(self):
         if not self.group_name:
