@@ -17,6 +17,7 @@ from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
+from src.modules.utils import GroupCreator
 
 DB = Firebase()
 
@@ -121,8 +122,9 @@ class DiscordBot:
             if self.users_pool.has(message.author) and not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
-                await FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE")).finish_login(message.author,
-                                                                                                     message.content)
+                group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
+                login: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"), group_creator)
+                await login.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
 
         ################# ADMIN COMMANDS ###################################
@@ -142,52 +144,6 @@ class DiscordBot:
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
-
-    async def login(self, user, email):
-        import src.texts.login_text as login_texts
-        logging.info("Email test")
-        await user.send(login_texts.REGISTER_STARTING)
-        web_user, group = DB.recover_web_group_by_user(email)
-        if web_user:
-            logging.info(f"Usuario localizado {web_user.nickname}")
-            discord_user = DB.get_user(email=email)
-            if discord_user:
-                await user.send(login_texts.REGISTER_ALREADY_REGISTER)
-                pass
-            else:
-                guild = self.client.get_guild(int(os.getenv('GUILD')))
-                member = guild.get_member(user.id)
-                logging.info(f"Miembro de la Guild: {member.nick}")
-                if not guild:
-                    return
-                if group:
-                    discord_group = DB.get_group(group.name)
-                    logging.info(f"Se ha detectado el grupo {discord_group}")
-                    if not discord_group:
-                        await self.create_group_on_server(group, member, guild)
-                        discord_group = DB.get_group(group.name)
-                    role = discord.utils.get(guild.roles, name=group.name)
-                    discord_group.members.append(user.id)
-                    DB.create_or_update_group(discord_group)
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
-                    logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
-                    await member.add_roles(role)
-                    await user.send(login_texts.USER_HAS_GROUP(discord_group.name))
-
-                else:
-                    discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
-                    await user.send(login_texts.USER_NO_GROUP(user.name, user.discriminator))
-
-                role_hacker = discord.utils.get(guild.roles, name=os.getenv("HACKER_ROLE"))
-                await member.add_roles(role_hacker)
-
-                DB.create_or_update_user(discord_user)
-                # Creacion usuario
-                await user.send(login_texts.REGISTER_OK)
-        else:
-            logging.info("No se ha encontrado al usuario")
-            await user.send(login_texts.REGISTER_KO)
-        self.users_pool.finish_login(user)
 
     @authorization_required
     async def create_command(self, ctx):
