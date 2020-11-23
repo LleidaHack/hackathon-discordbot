@@ -1,3 +1,6 @@
+import logging
+
+
 class AuthenticationPool:
 
     def __init__(self):
@@ -13,9 +16,11 @@ class AuthenticationPool:
         if len(self.last_people) >= self.MAX_RECOVER:
             self.last_people = self.last_people[1:]
             self.last_people.append(author)
+        logging.info(f"{author} added in AuthenticationPool")
 
     def finish_login(self, author):
         self.__middle_people.remove(author)
+        logging.info(f"{author} removed in AuthenticationPool")
 
     def has(self, author) -> bool:
         return author in self.__middle_people

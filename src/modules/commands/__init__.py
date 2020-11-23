@@ -1,1 +1,1 @@
-from .command import BaseCommand
+from .command import BaseCommand, FireBaseCommand

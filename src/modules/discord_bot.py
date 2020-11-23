@@ -12,7 +12,10 @@ from discord.ext.commands import Context
 from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
+from src.modules.commands.login import LoginCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
+from src.modules.login import StartLogin, FinishLogin
+from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
 
 DB = Firebase()
@@ -62,7 +65,7 @@ class DiscordBot:
         logging.info("Reading bot functions")
 
         self.questions = QuestionPool()
-        self.user_registering = {}
+        self.users_pool = AuthenticationPool()
 
         @self.client.command()
         async def help(ctx):
@@ -89,7 +92,7 @@ class DiscordBot:
 
         @self.client.command()
         async def login(ctx):
-            await self.start_register(ctx.author, ctx)
+            await LoginCommand(ctx, DB, ctx.author, self.users_pool).apply()
 
         @self.client.command()
         async def create(ctx):
@@ -111,13 +114,14 @@ class DiscordBot:
         async def on_member_join(member):
             import src.texts.login_text as login_texts
             await member.send(embed=login_texts.WELCOME_MESSAGE)
-            await self.start_register(member)
+            await StartLogin(DB, self.users_pool).start_login(member)
 
         @self.client.listen('on_message')
         async def on_message(message):
-            if message.author in self.user_registering and not message.guild and not message.author.bot:
+            if self.users_pool.has(message.author) and not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
-                await self.login(message.author, message.content, message.guild)
+                guild = self.client.get_guild(int(os.getenv('GUILD')))
+                await FinishLogin(guild, DB, self.users_pool).finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
 
         ################# ADMIN COMMANDS ###################################
@@ -138,19 +142,7 @@ class DiscordBot:
         logging.info("Starting bot!")
         self.client.run(self.token)
 
-    async def start_register(self, author, ctx=None):
-        import src.texts.login_text as login_texts
-        if ctx and ctx.guild:
-            await ctx.send(login_texts.PM_SENDED)
-        user_discord = DB.get_user(discord_id=author.id)
-        if not user_discord:
-            logging.info("Enviando mensaje de inicio de registro a " + str(author))
-            await author.send(login_texts.REGISTER_MESSAGE)
-            self.user_registering[author] = 0
-        else:
-            await author.send(login_texts.REGISTER_ALREADY_REGISTER)
-
-    async def login(self, user, email, guild):
+    async def login(self, user, email):
         import src.texts.login_text as login_texts
         logging.info("Email test")
         await user.send(login_texts.REGISTER_STARTING)
@@ -171,10 +163,9 @@ class DiscordBot:
                     discord_group = DB.get_group(group.name)
                     logging.info(f"Se ha detectado el grupo {discord_group}")
                     if not discord_group:
-                        await  self.create_group_on_server(group, member, guild)
+                        await self.create_group_on_server(group, member, guild)
                         discord_group = DB.get_group(group.name)
                     role = discord.utils.get(guild.roles, name=group.name)
-
                     discord_group.members.append(user.id)
                     DB.create_or_update_group(discord_group)
                     discord_user = ModelUser(user.name, user.discriminator, user.id, group.name, email)
@@ -195,7 +186,7 @@ class DiscordBot:
         else:
             logging.info("No se ha encontrado al usuario")
             await user.send(login_texts.REGISTER_KO)
-        self.user_registering.pop(user)
+        self.users_pool.finish_login(user)
 
     @authorization_required
     async def create_command(self, ctx):
