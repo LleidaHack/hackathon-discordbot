@@ -16,6 +16,7 @@ class CreateCommand(FireBaseCommand):
         self.group_name = None
         self.group_creator = group_creator
 
+    @FireBaseCommand.authorization_required
     async def apply(self):
         msg = self.ctx.message.content.split()
         if len(msg) < 2:
