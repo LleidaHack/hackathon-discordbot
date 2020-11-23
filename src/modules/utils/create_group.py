@@ -11,10 +11,7 @@ class CreateGroup:
         self.guild = guild
         self.user = user
     async def create_group(self):
-        group = self.get_group() 
-        if group:
-            logging.info("[CREATE GROUP - ERROR] El grupo indicado ya existe")
-            return False
+
 
         logging.info("[CREATE GROUP - OK] Creando rol")
         role = await self.guild.create_role(name=self.group.name)
@@ -38,9 +35,6 @@ class CreateGroup:
         self.database.create_or_update_group(group)
 
         return True
-    def get_group (self):
-        group = self.database.get_group(group_name=self.group.name)
-        return group if group else self.database.recover_web_group(self.group.name)
 
     async def add_user(self, role: Role):
         await self.user.add_roles(role)
