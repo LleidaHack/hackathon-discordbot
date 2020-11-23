@@ -12,6 +12,8 @@ from discord.ext.commands import Context
 from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
+from src.modules.commands.create import CreateCommand
+from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
@@ -20,22 +22,6 @@ from src.modules.pools.questions import QuestionPool
 from src.modules.utils import GroupCreator
 
 DB = Firebase()
-
-
-def authorization_required(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        import src.texts.auth as txt
-        ctx = args[1]
-        user = DB.get_user(discord_id=ctx.message.author.id)
-        if user is None:
-            logging.info("Usuario no registrado")
-            await ctx.send(txt.NOT_REGISTERED_ERROR)
-            return
-        logging.info(f"Usuario registrado")
-        return await func(*args)
-
-    return wrapper
 
 
 def group_required(func):
@@ -97,7 +83,11 @@ class DiscordBot:
 
         @self.client.command()
         async def create(ctx):
-            await self.create_command(ctx)
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, ctx.guild)
+            create: CreateCommand = CreateCommand(ctx, DB, ctx.author, group_creator)
+            await create.apply()
 
         @self.client.command()
         async def invite(ctx):
@@ -109,7 +99,11 @@ class DiscordBot:
 
         @self.client.command()
         async def leave(ctx):
-            await self.leave_command(ctx)
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.author = ctx.guild.get_member(ctx.author.id)
+            leave: LeaveCommand = LeaveCommand(ctx, DB)
+            await leave.apply()
 
         @self.client.event
         async def on_member_join(member):
@@ -148,39 +142,6 @@ class DiscordBot:
         logging.info("Starting bot!")
         self.client.run(self.token)
 
-    @authorization_required
-    async def create_command(self, ctx):
-        import src.texts.create_texts as texts
-        if not ctx.guild:
-            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            ctx.author = ctx.guild.get_member(ctx.author.id)
-
-        user = DB.get_user(discord_id=ctx.message.author.id)
-        if user.group_name is not None and user.group_name != '':
-            logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
-            await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
-            return
-        command = ctx.message.content.split()
-        if len(command) < 2:
-            logging.info("[COMMAND CREATE - ERROR] La sintaxis es incorrecta")
-            await ctx.send(texts.SINTAXIX_ERROR)
-            return
-        group = DB.get_group(group_name=' '.join(command[1:]))
-        if not group:
-            group = DB.recover_web_group(' '.join(command[1:]))
-        if group:
-            logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
-            await ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
-            return
-        await ctx.send(texts.STARTING_CREATE_GROUP)
-        group = Group(' '.join(command[1:]), [ctx.message.author.id])
-        await self.create_group_on_server(group, ctx.author, ctx.guild)
-        user.group_name = group.name
-        DB.create_or_update_user(user)
-        logging.info("[COMMAND CREATE - OK] Informando all Ok")
-        await ctx.send(texts.CREATED_GROUP)
-
-    @authorization_required
     @group_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
@@ -218,7 +179,6 @@ class DiscordBot:
             await member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
 
-    @authorization_required
     async def join_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.join_texts as txt
@@ -275,35 +235,3 @@ class DiscordBot:
         logging.info(f"Añadiendo el rol {role.name} al miembro {member.name}")
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
-
-    @authorization_required
-    @group_required
-    async def leave_command(self, ctx):
-        from src.modules.facades import ContextFacade
-        import src.texts.leave_texts as txt
-        if not ctx.guild:
-            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            ctx.author = ctx.guild.get_member(ctx.author.id)
-        fac: ContextFacade = ContextFacade(ctx)
-        logging.info(f"leave command por {fac.get_author().name}")
-        user: ModelUser = DB.get_user_from_id(fac.get_author().id)
-        group = DB.get_group(user.group_name)
-        if not group:
-            logging.error(f"No se ha encontrado el grupo {user.group_name} del usuario {user.get_full_name()}.")
-            await ctx.send(txt.SERVER_ERROR)
-            return
-        group.remove_user(user.discord_id)
-        user.group_name = None
-        DB.create_or_update_user(user)
-        DB.create_or_update_group(group)
-        role = discord.utils.get(ctx.guild.roles, name=group.name)
-        member = ctx.guild.get_member(user.discord_id)
-        await member.remove_roles(role)
-        if group.size() == 0:
-            chanels = list(filter(lambda x: role in x.overwrites, ctx.guild.channels))
-            # if the channel exists
-            for chanel in chanels:
-                await chanel.delete()
-            DB.delete_group(group.name)
-            await role.delete()
-        await ctx.send(txt.LEAVE_MSG(member.name, role.name))

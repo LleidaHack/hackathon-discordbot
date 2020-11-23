@@ -15,6 +15,16 @@ class GroupCreator:
         self.guild: Guild = guild
 
     async def create_group(self, group: Group, member: Member, modal_user: User):
+        """
+        * It creates the group with modal_user
+        * It updates or creates the user
+        * Adds the roles to the member of the guild
+        * Creates the different roles
+        :param group: Model Group from Bot DB
+        :param member: Member of a Discord Guild
+        :param modal_user: Model User from Bot DB
+        :return: None
+        """
         logging.info("[CREATE GROUP - OK] Creando rol")
         role = await self.guild.create_role(name=group.name)
         await self.create_channel_permissions(role, group)
