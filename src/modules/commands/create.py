@@ -21,13 +21,13 @@ class CreateCommand(FireBaseCommand):
         if len(msg) < 2:
             await self.ctx.send(texts.SINTAXIS_ERROR)
             return
-        self.group_name = msg[1:]
+        self.group_name = ' '.join(msg[1:])
         if self.group_exists():
             await self.ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
             return
         await self.ctx.send(texts.STARTING_CREATE_GROUP)
         firebase_user = self.DB.get_user(discord_id=self.member.id)
-        await self.group_creator.create_group(self.group_name, self.member, firebase_user)
+        await self.group_creator.create_group(Group(name=self.group_name), self.member, firebase_user)
         await self.ctx.send(texts.CREATED_GROUP)
 
     def group_exists(self):
