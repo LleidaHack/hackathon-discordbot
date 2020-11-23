@@ -1,2 +1,2 @@
-from .finish_login import FinishLogin
-from .start_login import StartLogin
+from src.modules.login.finish_login import FinishLogin
+from src.modules.login.start_login import StartLogin
