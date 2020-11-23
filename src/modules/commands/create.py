@@ -27,7 +27,8 @@ class CreateCommand(FireBaseCommand):
 
         await self.context.send(texts.STARTING_CREATE_GROUP)
         group = Group(name=self.group_name)
-        await self.group_creator.create_group(self.group_name, self.member)
+        user = self.DB.get_user(discord_id=self.member.id)
+        await self.group_creator.create_group(self.group_name, self.member, user)
         await self.context.send(texts.CREATED_GROUP)
         return
     def group_exists(self):
