@@ -19,6 +19,7 @@ class InviteCommand(FireBaseCommand):
         super().__init__(context, database)
 
     @FireBaseCommand.authorization_required
+    @FireBaseCommand.group_required
     async def apply(self):
         try:
             discord_user: DiscordUser = self.ctx.author

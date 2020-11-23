@@ -39,7 +39,22 @@ class FireBaseCommand(BaseCommand, ABC):
                 return
             logging.info(f"Usuario registrado")
             return await func(*args)
+        return wrapper
 
+    @staticmethod
+    def group_required(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            import src.texts.auth as txt
+            command = args[0]
+            ctx = command.ctx
+            user = command.DB.get_user(discord_id=ctx.message.author.id)
+            if user.group_name is None:
+                logging.info("Usuario sin grupo")
+                await ctx.send(txt.NOT_INGROUP_ERROR(ctx.author))
+                return
+            logging.info(f"Usuario con grupo")
+            return await func(*args)
         return wrapper
 
 
