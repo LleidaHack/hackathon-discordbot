@@ -1,9 +1,11 @@
 import logging
+from typing import Optional
 
 import discord
 from discord import User
 
 import src.texts.login_text as login_texts
+from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.pools.authentication import AuthenticationPool
 from src.modules.utils import GroupCreator
@@ -38,34 +40,39 @@ class FinishLogin:
             return
         member = self.guild.get_member(user.id)
         logging.info(f"Miembro de la Guild: {member.nick}")
-        discord_user = await self.get_discord_user(email, web_group, member, user)
-        role_hacker = discord.utils.get(self.guild.roles, name=self.hacker_role)
-        await member.add_roles(role_hacker)
-        self.DB.create_or_update_user(discord_user)
+        await self.create_discord_user(email, web_group, member, user)
+        await self.add_hacker_role(member)
         await user.send(login_texts.REGISTER_OK)
 
-    async def get_discord_user(self, email, web_group, member, user):
-        if not web_group:
-            return await self.get_alone_user(email, user)
-        return await self.get_user_of_group(email, web_group, member, user)
+    async def add_hacker_role(self, member):
+        role_hacker = discord.utils.get(self.guild.roles, name=self.hacker_role)
+        await member.add_roles(role_hacker)
 
-    async def get_user_of_group(self, email, web_group, member, user):
-        discord_group = self.DB.get_group(web_group.name)
+    async def create_discord_user(self, email, web_group, member, user):
+        if not web_group:
+            await self.create_alone_user(email, user)
+        await self.create_user_of_group(email, web_group, member, user)
+
+    async def create_user_of_group(self, email, web_group, member, user):
+        discord_group: Optional[Group] = self.DB.get_group(web_group.name)
         if discord_group:
             logging.info(f"Se ha detectado el grupo {discord_group} en Firebase")
-            role = discord.utils.get(self.guild.roles, name=web_group.name)
-            logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
-            discord_group.members.append(user.id)
-            await member.add_roles(role)
+            await self.add_group_role(member, web_group)
+            discord_group.add_user(user.id)
             self.DB.create_or_update_group(discord_group)
+            discord_user = ModelUser(user.name, user.discriminator, user.id, web_group.name, email)
+            self.DB.create_or_update_user(discord_user)
         else:
             logging.info(f"Se creará {discord_group} y con sus roles")
             await self.group_creator.create_group(web_group, member)
-        discord_user = ModelUser(user.name, user.discriminator, user.id, web_group.name, email)
         await user.send(login_texts.USER_HAS_GROUP(discord_group.name))
-        return discord_user
 
-    async def get_alone_user(self, email, user):
+    async def add_group_role(self, member, web_group):
+        role = discord.utils.get(self.guild.roles, name=web_group.name)
+        logging.info(f"[REGISTER - OK] Añadiendo el usuario {member} al rol {role}")
+        await member.add_roles(role)
+
+    async def create_alone_user(self, email, user):
         discord_user = ModelUser(user.name, user.discriminator, user.id, None, email)
         await user.send(login_texts.USER_NO_GROUP(user.name, user.discriminator))
-        return discord_user
+        self.DB.create_or_update_user(discord_user)
