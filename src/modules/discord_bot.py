@@ -99,10 +99,11 @@ class DiscordBot:
         @self.client.command()
         async def create(ctx):
             if not ctx.guild:
-                guild = self.client.get_guild(int(os.getenv('GUILD')))
-            group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
-            create: Create = CreateCommand(ctx, DB, ctx.author, group_creator).apply()
-            await create.create()
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, ctx.guild)
+            create: CreateCommand = CreateCommand(ctx, DB, ctx.author, group_creator)
+            await create.apply()
+
         @self.client.command()
         async def invite(ctx):
             await self.invite_command(ctx)
