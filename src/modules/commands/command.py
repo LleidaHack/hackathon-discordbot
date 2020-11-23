@@ -31,7 +31,7 @@ class FireBaseCommand(BaseCommand, ABC):
         async def wrapper(*args, **kwargs):
             import src.texts.auth as txt
             command = args[0]
-            ctx = args[1]
+            ctx = command.ctx
             user = command.DB.get_user(discord_id=ctx.message.author.id)
             if user is None:
                 logging.info("Usuario no registrado")

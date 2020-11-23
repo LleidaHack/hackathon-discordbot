@@ -12,8 +12,9 @@ from discord.ext.commands import Context
 from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
-from src.modules.commands.login import LoginCommand
 from src.modules.commands.create import CreateCommand
+from src.modules.commands.leave import LeaveCommand
+from src.modules.commands.login import LoginCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
@@ -21,6 +22,7 @@ from src.modules.pools.questions import QuestionPool
 from src.modules.utils import GroupCreator
 
 DB = Firebase()
+
 
 def group_required(func):
     @wraps(func)
@@ -97,7 +99,10 @@ class DiscordBot:
 
         @self.client.command()
         async def leave(ctx):
-            await self.leave_command(ctx)
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            leave: LeaveCommand = LeaveCommand(ctx, DB)
+            await leave.apply()
 
         @self.client.event
         async def on_member_join(member):
@@ -136,39 +141,6 @@ class DiscordBot:
         logging.info("Starting bot!")
         self.client.run(self.token)
 
-    @authorization_required
-    async def create_command(self, ctx):
-        import src.texts.create_texts as texts
-        if not ctx.guild:
-            ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            ctx.author = ctx.guild.get_member(ctx.author.id)
-
-        user = DB.get_user(discord_id=ctx.message.author.id)
-        if user.group_name is not None and user.group_name != '':
-            logging.info("[COMMAND CREATE - ERROR] El usuario ya se encuentra en un grupo")
-            await ctx.send(texts.ALREADY_ON_GROUP_ERROR)
-            return
-        command = ctx.message.content.split()
-        if len(command) < 2:
-            logging.info("[COMMAND CREATE - ERROR] La sintaxis es incorrecta")
-            await ctx.send(texts.SINTAXIX_ERROR)
-            return
-        group = DB.get_group(group_name=' '.join(command[1:]))
-        if not group:
-            group = DB.recover_web_group(' '.join(command[1:]))
-        if group:
-            logging.info("[COMMAND CREATE - ERROR] El grupo indicado ya existe")
-            await ctx.send(texts.GROUP_ALREADY_EXISTS_ERROR)
-            return
-        await ctx.send(texts.STARTING_CREATE_GROUP)
-        group = Group(' '.join(command[1:]), [ctx.message.author.id])
-        await self.create_group_on_server(group, ctx.author, ctx.guild)
-        user.group_name = group.name
-        DB.create_or_update_user(user)
-        logging.info("[COMMAND CREATE - OK] Informando all Ok")
-        await ctx.send(texts.CREATED_GROUP)
-
-    @authorization_required
     @group_required
     async def invite_command(self, ctx: Context):
         import src.texts.invite_texts as txt
@@ -206,7 +178,6 @@ class DiscordBot:
             await member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
 
-    @authorization_required
     async def join_command(self, ctx):
         from src.modules.facades import ContextFacade
         import src.texts.join_texts as txt
@@ -264,7 +235,6 @@ class DiscordBot:
         await member.add_roles(role)
         await ctx.send(txt.MEMBER_REGISTERED_IN(member.name, role.name))
 
-    @authorization_required
     @group_required
     async def leave_command(self, ctx):
         from src.modules.facades import ContextFacade
