@@ -5,6 +5,7 @@ from discord import Guild, Role, Member
 
 from src.crud.firebase import Firebase
 from src.models.group import Group
+from src.models.user import User
 
 
 class GroupCreator:
@@ -13,14 +14,14 @@ class GroupCreator:
         self.database = database
         self.guild: Guild = guild
 
-    async def create_group(self, group: Group, member: Member):
+    async def create_group(self, group: Group, member: Member, modal_user: User):
         logging.info("[CREATE GROUP - OK] Creando rol")
         role = await self.guild.create_role(name=group.name)
         await self.create_channel_permissions(role, group)
         logging.info(f"[CREATE GROUP - OK] Añadiendo {member} al rol {role}")
         await member.add_roles(role)
         logging.info("[CREATE GROUP - OK] Añadiendo usuario")
-        await self.add_user_and_update(role, group, member)
+        await self.add_user_and_update(group, modal_user)
 
     async def create_channel_permissions(self, role: Role, group: Group):
         overwrites = {
@@ -34,14 +35,14 @@ class GroupCreator:
                 await self.guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
                 break
 
-    async def add_user_and_update(self, role: Role, group: Group, member: Member):
-        await self.update_user_database(group, member)
+    async def add_user_and_update(self, group: Group, modal_user: User):
+        await self.update_user_database(group, modal_user)
 
-    async def update_user_database(self, group: Group, member: Member):
-        user = self.database.get_user(discord_id=member.id)
+    async def update_user_database(self, group: Group, user: User):
         user.group_name = group.name
-        group.add_user(user)
+        group.add_user(user.discord_id)
+        logging.info(f"[CREATE GROUP - OK] User {user} en la base de datos")
         self.database.create_or_update_user(user)
-        logging.info("[CREATE GROUP - OK] Creando grupo en la base de datos")
+        logging.info(f"[CREATE GROUP - OK] Creando grupo {group} en la base de datos")
         self.database.create_or_update_group(group)
 

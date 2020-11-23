@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from discord import User

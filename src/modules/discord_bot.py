@@ -119,11 +119,14 @@ class DiscordBot:
 
         @self.client.listen('on_message')
         async def on_message(message):
-            if self.users_pool.has(message.author) and not message.guild and not message.author.bot:
+            msg: str = message.content
+            if not msg.startswith("eps!") and self.users_pool.has(message.author) and \
+                    not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
                 group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
-                login_manager: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"), group_creator)
+                login_manager: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"),
+                                                         group_creator)
                 await login_manager.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
 
@@ -304,4 +307,3 @@ class DiscordBot:
             DB.delete_group(group.name)
             await role.delete()
         await ctx.send(txt.LEAVE_MSG(member.name, role.name))
-
