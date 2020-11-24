@@ -26,7 +26,8 @@ class AskCommand(BaseCommand):
             channel = self.client.get_channel(channelId)
             self.pool.add_question(self.ctx.author, self.question)
             await channel.send(embed=ask_texts.SEND_TO_ADMINS(str(self.pool.get_last_question()), str(self.ctx.author), self.question))
-        await self.ctx.author.send(ask_texts.EMBED_VOID_MESSAGE)
+        else:
+            await self.ctx.author.send(ask_texts.EMBED_VOID_MESSAGE)
 
     @staticmethod
     def get_channel_id(ctx, name=None):
@@ -47,6 +48,7 @@ class ReplyCommand(BaseCommand):
     async def apply(self):
         import src.texts.ask_reply_texts as ask_texts
         await self.pool.get_author(self.num_question).send(embed=ask_texts.REPLY_TO_USER(str(self.ctx.author),self.pool.get_question(self.num_question),self.reply))
+        self.pool.remove_answered_question(self.num_question)
 
     def __get_reply_from_context(self):
         all_comand: str = self.ctx.message.content

@@ -12,6 +12,7 @@ from src.modules.commands.invite import InviteCommand
 from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
+from src.modules.commands.list_questions import ListQuestions
 from src.modules.commands.ask_reply import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
@@ -136,6 +137,11 @@ class DiscordBot:
                     time.sleep(1)
                 except:
                     pass
+
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def list_questions(ctx):
+             await ListQuestions(ctx, self.questions).apply()
 
     def start(self):
         logging.info("Starting bot!")
