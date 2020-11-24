@@ -10,7 +10,7 @@ class QuestionPool:
         self.__question_num = 0
 
     def add_question(self, author, question):
-        self.__questions[self.__question_num] = {"author" : author,"question" : question}
+        self.__questions[self.__question_num] = {"author" : author, "question" : question, "answered": False}
         self.__question_num += 1
 
     def get_last_question(self) -> int:
@@ -23,3 +23,11 @@ class QuestionPool:
 
     def get_question(self, question_id):
         return self.__questions[question_id]["question"]
+
+    def get_unanswered_questions(self):
+        return self.__questions
+
+    def remove_answered_question(self, id_question):
+        del self.__questions[id_question]
+
+
