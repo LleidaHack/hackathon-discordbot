@@ -1,3 +1,17 @@
+response = [
+    "Ahí va ésa... :satisfied:",
+    "¿Quién ha dicho chiste? :eyes: ¡Andando!",
+    "A todo el mundo le gustan mis chistes, mi preferido és este: :sunglasses:",
+    "¿Un chiste? :eye::lips::eye:",
+    "¡Un poco de alegria :dancer:",
+    "A ver a ver... :eyes:",
+    "Me dicen siempre que soy el más chistoso :liar:",
+    "¡Andando! :nerd:",
+    "¡Receta de chistes sacada del horno! :cook:",
+    "¿De verdad quieres que te cuente un chiste? :eye::lips::eye:",
+    "Que quede entre nosotros... :spy:"
+]
+
 jokes = [
     "- ¿Por que los de Lepe ponen internet en la ventana?\n- Para tener windows vista.",
     "- ¿Cuántos técnicos de Microsoft hacen falta para cambiar una bombilla?\n- Ninguno, es un problema de Hardware.",

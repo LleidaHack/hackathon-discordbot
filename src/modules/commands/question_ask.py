@@ -3,6 +3,7 @@ import logging
 from discord.ext.commands import Context
 
 from src.modules.commands import BaseCommand
+from src.modules.commands.utils import TraceCommand
 from src.modules.pools.questions import QuestionPool
 
 
@@ -14,6 +15,7 @@ class AskCommand(BaseCommand):
         self.pool = pool
         self.question = question
 
+    @TraceCommand.traceback_print
     async def apply(self):
         import src.texts.ask_reply_texts as ask_texts
         logging.info("Enviando pregunta")

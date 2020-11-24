@@ -17,7 +17,7 @@ class Group:
         """
         self.members.append(user)
 
-    def remove_user(self, user:int):
+    def remove_user(self, user: int):
         self.members.remove(user)
 
     def size(self):

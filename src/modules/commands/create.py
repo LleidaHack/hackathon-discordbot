@@ -5,6 +5,7 @@ import src.texts.create_texts as texts
 from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.modules.commands import FireBaseCommand
+from src.modules.commands.utils import TraceCommand
 from src.modules.utils import GroupCreator
 
 
@@ -16,6 +17,7 @@ class CreateCommand(FireBaseCommand):
         self.group_name = None
         self.group_creator = group_creator
 
+    @TraceCommand.traceback_print
     @FireBaseCommand.authorization_required
     async def apply(self):
         msg = self.ctx.message.content.split()

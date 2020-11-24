@@ -24,5 +24,5 @@ class TestInviteCommand(unittest.TestCase):
         self.invite = InviteCommand(MockContext(), MockFirebase())
 
     def test_people_arguments(self):
-        name = 'Elena Barrachina#1234'.split('#')
-        self.assertEqual([name], self.invite.get_people_names(f'eps!join {name}'))
+        name = 'Elena Barrachina#1234'
+        self.assertEqual([name.split('#')], self.invite.get_people_names(f'eps!invite {name}'))
