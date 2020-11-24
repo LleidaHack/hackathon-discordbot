@@ -12,7 +12,7 @@ from src.modules.commands.invite import InviteCommand
 from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
-from src.modules.commands.question_ask import AskCommand, ReplyCommand
+from src.modules.commands.ask_reply import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
@@ -41,12 +41,12 @@ class DiscordBot:
             await HelpCommand(ctx).apply()
 
         @self.client.command()
-        async def ask(ctx, question):
-            await AskCommand(ctx, question, self.questions, self.client).apply()
+        async def ask(ctx):
+            await AskCommand(ctx, self.questions, self.client).apply()
 
         @self.client.command()
-        async def reply(ctx, num, reply_text):
-            await ReplyCommand(ctx, self.questions, num, reply_text).apply()
+        async def reply(ctx, num):
+            await ReplyCommand(ctx, self.questions, num).apply()
 
         @self.client.command()
         async def joke(ctx):
