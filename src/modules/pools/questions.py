@@ -9,8 +9,8 @@ class QuestionPool:
         self.__questions = {}
         self.__question_num = 0
 
-    def add_question(self, author):
-        self.__questions[self.__question_num] = author
+    def add_question(self, author, question):
+        self.__questions[self.__question_num] = {"author" : author,"question" : question}
         self.__question_num += 1
 
     def get_last_question(self) -> int:
@@ -19,4 +19,7 @@ class QuestionPool:
         return max(0, self.__question_num - 1)
 
     def get_author(self, question_id: int) -> User:
-        return self.__questions[question_id]
+        return self.__questions[question_id]["author"]
+
+    def get_question(self, question_id):
+        return self.__questions[question_id]["question"]
