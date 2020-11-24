@@ -39,6 +39,7 @@ class FireBaseCommand(BaseCommand, ABC):
                 return
             logging.info(f"Usuario registrado")
             return await func(*args)
+
         return wrapper
 
     @staticmethod
@@ -55,6 +56,7 @@ class FireBaseCommand(BaseCommand, ABC):
                 return
             logging.info(f"Usuario con grupo")
             return await func(*args)
+
         return wrapper
 
     @staticmethod
@@ -71,7 +73,10 @@ class FireBaseCommand(BaseCommand, ABC):
                 return
             logging.info(f"Usuario sin grupo")
             return await func(*args)
+
         return wrapper
+
+
 class CommandError(BaseException):
 
     def __init__(self, *args: object, **kwargs) -> None:

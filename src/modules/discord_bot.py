@@ -1,22 +1,17 @@
 #!/usr/bin/python3
 import logging
 import os
-from functools import wraps
-from typing import List, Optional
 
 import discord
-from discord import Member
 from discord.ext import commands as discord_commands
-from discord.ext.commands import Context
+from discord.ext.commands import ConversionError
 
 from src.crud.firebase import Firebase
-from src.models.group import Group
-from src.models.user import User as ModelUser
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
+from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
-from src.modules.commands.join import JoinCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
@@ -24,22 +19,6 @@ from src.modules.pools.questions import QuestionPool
 from src.modules.utils import GroupCreator
 
 DB = Firebase()
-
-
-def group_required(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        import src.texts.auth as txt
-        ctx = args[1]
-        user = DB.get_user(discord_id=ctx.message.author.id)
-        if user.group_name is None:
-            logging.info("Usuario sin grupo")
-            await ctx.send(txt.NOT_INGROUP_ERROR(ctx.author))
-            return
-        logging.info(f"Usuario con grupo")
-        return await func(*args)
-
-    return wrapper
 
 
 class DiscordBot:
@@ -66,8 +45,8 @@ class DiscordBot:
             await AskCommand(ctx, question, self.questions, self.client).apply()
 
         @self.client.command()
-        async def reply(ctx, num, reply):
-            await ReplyCommand(ctx, self.questions, num, reply).apply()
+        async def reply(ctx, num, reply_text):
+            await ReplyCommand(ctx, self.questions, num, reply_text).apply()
 
         @self.client.command()
         async def joke(ctx):
@@ -104,6 +83,7 @@ class DiscordBot:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
             join: JoinCommand = JoinCommand(ctx, DB)
             await join.apply()
+
         @self.client.command()
         async def leave(ctx):
             if not ctx.guild:
@@ -117,6 +97,17 @@ class DiscordBot:
             import src.texts.login_text as login_texts
             await member.send(embed=login_texts.WELCOME_MESSAGE)
             await StartLogin(DB, self.users_pool).start_login(member)
+
+        @self.client.event
+        async def on_command_error(ctx, error):
+            if isinstance(error, discord_commands.CommandError):
+                from src.modules.commands.utils import CatchedError
+                if isinstance(error, ConversionError) and isinstance(error.original, CatchedError):
+                    await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
+                else:
+                    await ctx.send("¿Has escrito bien el comando? Escribe `eps!help` si quieres saber los comandos :satisfied:")
+            else:
+                raise error
 
         @self.client.listen('on_message')
         async def on_message(message):

@@ -1,27 +1,26 @@
 import logging
-from typing import Optional, List
 
 import discord
-from discord import User as DiscordUser, Member
 from discord.ext.commands import Context
-from src.models.invitation import Invitation
+
 import src.texts.join_texts as txt
 from src.crud.firebase import Firebase
-from src.models.group import Group
-from src.models.user import User as ModelUser
+from src.models.invitation import Invitation
 from src.modules.commands import FireBaseCommand
-from src.modules.commands.command import CommandError
-from src.modules.utils import GroupCreator
+from src.modules.commands.utils import TraceCommand
+
 
 class JoinCommand(FireBaseCommand):
 
     def __init__(self, context: Context, database: Firebase):
         super().__init__(context, database)
 
+    @TraceCommand.traceback_print
     @FireBaseCommand.authorization_required
     @FireBaseCommand.non_group_required
     async def apply(self):
-        invitations : list = list(map(lambda x: x if x[1].is_pending() else None, self.DB.get_invitations(self.ctx.author.id)))
+        invitations: list = list(
+            map(lambda x: x if x[1].is_pending() else None, self.DB.get_invitations(self.ctx.author.id)))
         if not any(invitations):
             await self.ctx.send(txt.ANY_INVITE(self.ctx.author.name, self.ctx.author.discriminator))
             return
@@ -29,9 +28,9 @@ class JoinCommand(FireBaseCommand):
         if len(msg) <= 1 and len(invitations) > 1:
             await self.ctx.send(txt.MANY_INVITES(list(map(lambda x: x[1].group_name, invitations))))
             return
-        inv_id, invitation = self.DB.get_invitation(self.ctx.author.id, ' '.join(msg[1:])) if len(msg) > 1 else invitations[0]
+        inv_id, invitation = self.DB.get_invitation(self.ctx.author.id, ' '.join(msg[1:])) if len(msg) > 1 else \
+        invitations[0]
         await self.accept_invitation(invitation)
-
 
     async def accept_invitation(self, invitation: Invitation):
         user, group, member, role = await self.recover_entities(invitation.user_id, invitation.group_name)
@@ -41,7 +40,7 @@ class JoinCommand(FireBaseCommand):
             await self.ctx.send(txt.INVITATION_LOST)
             return
         logging.info(f"Aceptación de invitación correcto. Uniendo a roles y actualizando Bases de datos")
-        
+
         await member.add_roles(role)
         self.DB.create_or_update_user(user)
         self.DB.create_or_update_group(group)

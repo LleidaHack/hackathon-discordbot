@@ -4,6 +4,7 @@ from discord.ext.commands import Context
 import src.texts.login_text as login_texts
 from src.crud.firebase import Firebase
 from src.modules.commands import FireBaseCommand
+from src.modules.commands.utils import TraceCommand
 from src.modules.login import StartLogin
 from src.modules.pools.authentication import AuthenticationPool
 
@@ -15,6 +16,7 @@ class LoginCommand(FireBaseCommand):
         self.author = author
         self.pool = pool
 
+    @TraceCommand.traceback_print
     async def apply(self):
         if self.is_on_guild():
             await self.ctx.send(login_texts.PM_SENDED)
