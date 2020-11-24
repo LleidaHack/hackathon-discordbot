@@ -4,7 +4,7 @@ import os
 
 import discord
 from discord.ext import commands as discord_commands
-from discord.ext.commands import ConversionError
+from discord.ext.commands import CommandInvokeError
 
 from src.crud.firebase import Firebase
 from src.modules.commands.create import CreateCommand
@@ -102,10 +102,11 @@ class DiscordBot:
         async def on_command_error(ctx, error):
             if isinstance(error, discord_commands.CommandError):
                 from src.modules.commands.utils import CatchedError
-                if isinstance(error, ConversionError) and isinstance(error.original, CatchedError):
+                if isinstance(error, CommandInvokeError) and isinstance(error.original, CatchedError):
                     await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
                 else:
-                    await ctx.send("¿Has escrito bien el comando? Escribe `eps!help` si quieres saber los comandos :satisfied:")
+                    await ctx.send(
+                        "¿Has escrito bien el comando? Escribe `eps!help` si quieres saber los comandos :satisfied:")
             else:
                 raise error
 
