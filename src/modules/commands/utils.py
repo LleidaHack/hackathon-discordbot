@@ -34,7 +34,9 @@ class TraceCommand(ABC):
                     embed = discord.Embed(title='¡Error! :eye::lips::eye:')
                     value = ''.join(traceback.format_exception(None, e, e.__traceback__))
                     embed.add_field(name='Información',
-                                    value=f'Función *{func.__name__}* of {args[0].__class__.__name__}\nFrame:\n {e.__traceback__.tb_frame}',
+                                    value=f'**Función** *{func.__name__}* of {args[0].__class__.__name__}'
+                                          f'\n **User**: {command.ctx.author}\n '
+                                          f'**Command**: {command.ctx.message.content}',
                                     inline=False)
                     embed.add_field(name='Traceback', value=f'```{value}```',
                                     inline=False)
