@@ -16,6 +16,7 @@ from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
+from src.modules.commands.join import JoinCommand
 from src.modules.commands.question_ask import AskCommand, ReplyCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
@@ -99,8 +100,10 @@ class DiscordBot:
 
         @self.client.command()
         async def join(ctx):
-            await self.join_command(ctx)
-
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+            join: JoinCommand = JoinCommand(ctx, DB)
+            await join.apply()
         @self.client.command()
         async def leave(ctx):
             if not ctx.guild:
