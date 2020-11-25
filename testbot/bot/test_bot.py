@@ -1,4 +1,6 @@
 
 
 class TestBot():
-    pass
+    
+    def start(self):
+        pass
