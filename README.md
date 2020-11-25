@@ -1,7 +1,13 @@
 ## HackEPS 2020 - Discord Bot
 
 
-## Test
+## Unit Test
 ```
 python -m unittest
+```
+
+## Integration Test
+```
+python bot.py .envtest
+python test.py
 ```
