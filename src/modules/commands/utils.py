@@ -40,6 +40,7 @@ class TraceCommand(ABC):
                                     inline=False)
                     embed.add_field(name='Traceback', value=f'```{value}```',
                                     inline=False)
+                    logging.error(value)
                     await channel.send(mod_role.mention, embed=embed, file=File(io.StringIO(value), filename='error.txt'))
                 raise CatchedError
         return wrapper
