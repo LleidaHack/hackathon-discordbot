@@ -39,48 +39,48 @@ class TestBot():
 
     @test_collector()
     async def test_ask(self, interface):
-        await TestAsk().run_tests()
+        await TestAsk(interface).run_tests()
 
     @test_collector()
     async def test_reply(self, interface):
-        await TestReply().run_tests()
+        await TestReply(interface).run_tests()
 
     @test_collector()
     async def test_create(self, interface):
-        await TestCreate().run_tests()
+        await TestCreate(interface).run_tests()
 
     @test_collector()
     async def test_help(self, interface):
-        await TestHelp().run_tests()
+        await TestHelp(interface).run_tests()
 
     @test_collector()
     async def test_invite(self, interface):
-        await TestInvite().run_tests()
+        await TestInvite(interface).run_tests()
 
     @test_collector()
     async def test_join(self, interface):
-        await TestJoin().run_tests()
+        await TestJoin(interface).run_tests()
 
     @test_collector()
     async def test_joke(self, interface):
-        await TestJoke().run_tests()
+        await TestJoke(interface).run_tests()
 
     @test_collector()
     async def test_leave(self, interface):
-        await TestLeave().run_tests()
+        await TestLeave(interface).run_tests()
 
     @test_collector()
     async def test_list_questions(self, interface):
-        await TestListQuestions().run_tests()
+        await TestListQuestions(interface).run_tests()
 
     @test_collector()
     async def test_login(self, interface):
-        await TestLogin().run_tests()
+        await TestLogin(interface).run_tests()
 
     @test_collector()
     async def test_rpsls(self, interface):
-        await TestRPSLS().run_tests()
+        await TestRPSLS(interface).run_tests()
 
     @test_collector()
     async def test_utils(self, interface):
-        await TestUtils().run_tests()
+        await TestUtils(interface).run_tests()
