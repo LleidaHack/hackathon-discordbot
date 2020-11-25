@@ -6,6 +6,19 @@ from distest import TestCollector
 from distest import run_interactive_bot, run_dtest_bot
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandInvokeError
+from src.testbot.commands.test_ask import TestAsk
+from src.testbot.commands.test_create import TestCreate
+from src.testbot.commands.test_help import TestHelp
+from src.testbot.commands.test_invite import TestInvite
+from src.testbot.commands.test_join import TestJoin
+from src.testbot.commands.test_joke import TestJoke
+from src.testbot.commands.test_leave import TestLeave
+from src.testbot.commands.test_list_questions import TestListQuestions
+from src.testbot.commands.test_login import TestLogin
+from src.testbot.commands.test_reply import TestReply
+from src.testbot.commands.test_rpsls import TestRPSLS
+from src.testbot.commands.test_utils import TestUtils
+
 
 class TestBot():
 
@@ -24,49 +37,49 @@ class TestBot():
     #Test Comands
 
     @test_collector()
-    def test_ask(self):
-        pass
+    async def test_ask(self, interface):
+        await TestAsk().run_tests()
 
     @test_collector()
-    def test_reply(self):
-        pass
+    async def test_reply(self, interface):
+        await TestReply().run_tests()
 
     @test_collector()
-    def test_create(self):
-        pass
+    async def test_create(self, interface):
+        await TestCreate().run_tests()
 
     @test_collector()
-    def test_help(self):
-        pass
+    async def test_help(self, interface):
+        await TestHelp().run_tests()
 
     @test_collector()
-    def test_invite(self):
-        pass
+    async def test_invite(self, interface):
+        await TestInvite().run_tests()
 
     @test_collector()
-    def test_join(self):
-        pass
+    async def test_join(self, interface):
+        await TestJoin().run_tests()
 
     @test_collector()
-    def test_joke(self):
-        pass
+    async def test_joke(self, interface):
+        await TestJoke().run_tests()
 
     @test_collector()
-    def test_leave(self):
-        pass
+    async def test_leave(self, interface):
+        await TestLeave().run_tests()
 
     @test_collector()
-    def test_list_questions(self):
-        pass
+    async def test_list_questions(self, interface):
+        await TestListQuestions().run_tests()
 
     @test_collector()
-    def test_login(self):
-        pass
+    async def test_login(self, interface):
+        await TestLogin().run_tests()
 
     @test_collector()
-    def test_rpsls(self):
-        pass
+    async def test_rpsls(self, interface):
+        await TestRPSLS().run_tests()
 
     @test_collector()
-    def utils(self):
-        pass
+    async def test_utils(self, interface):
+        await TestUtils().run_tests()
