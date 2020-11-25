@@ -27,7 +27,7 @@ class GameCommand(BaseCommand):
     @TraceCommand.traceback_print
     async def apply(self):
         first_to_uppercase = lambda word: word[0].upper() + word[1:]
-        logging.info(f"apply de JokeCommand")
+        logging.info(f"apply de GameCommand")
         msg = self.ctx.message.content.split()
         if len(msg) == 1:
             await self.ctx.channel.send("Tienes que poner una de estas opciones: Rock, Paper, Scissor, Lizard, Spock.")
