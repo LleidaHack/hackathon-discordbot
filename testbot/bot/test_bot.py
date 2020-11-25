@@ -7,9 +7,10 @@ from distest import run_interactive_bot, run_dtest_bot
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandInvokeError
 
+test_collector = TestCollector()
+
 class TestBot():
 
-    test_collector = TestCollector()
 
     def __init__(self):
         logging.info("Reading test_bot config data")
@@ -19,7 +20,7 @@ class TestBot():
     
     def start(self):
         logging.info("Starting test_bot!")
-        distest.run_dtest_bot([None, os.getenv("DISCORD_TOKEN"), os.getenv('DISCORD_TEST_TOKEN')],self.token)
+        distest.run_dtest_bot([None, os.getenv('LOBOT_ID'), os.getenv('DISCORD_TEST_TOKEN')],test_collector)
 
     #Test Comands
 
