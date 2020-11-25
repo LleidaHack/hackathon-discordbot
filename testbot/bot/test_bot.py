@@ -71,7 +71,7 @@ class TestBot():
 
     @test_collector()
     async def test_list_questions(self, interface):
-        await TestListQuestions(interface).run_tests()
+        await TestListQuestion(interface).run_tests()
 
     @test_collector()
     async def test_login(self, interface):
