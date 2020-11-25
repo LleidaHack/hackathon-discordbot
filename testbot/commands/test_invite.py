@@ -1,5 +1,5 @@
 
-class TestInvets():
+class TestInvite():
     
     def __init__(self, interface):
         self.interface = interface

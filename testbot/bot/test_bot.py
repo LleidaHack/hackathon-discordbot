@@ -6,18 +6,18 @@ from distest import TestCollector
 from distest import run_interactive_bot, run_dtest_bot
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandInvokeError
-from src.testbot.commands.test_ask import TestAsk
-from src.testbot.commands.test_create import TestCreate
-from src.testbot.commands.test_help import TestHelp
-from src.testbot.commands.test_invite import TestInvite
-from src.testbot.commands.test_join import TestJoin
-from src.testbot.commands.test_joke import TestJoke
-from src.testbot.commands.test_leave import TestLeave
-from src.testbot.commands.test_list_questions import TestListQuestions
-from src.testbot.commands.test_login import TestLogin
-from src.testbot.commands.test_reply import TestReply
-from src.testbot.commands.test_rpsls import TestRPSLS
-from src.testbot.commands.test_utils import TestUtils
+from testbot.commands.test_ask import TestAsk
+from testbot.commands.test_create import TestCreate
+from testbot.commands.test_help import TestHelp
+from testbot.commands.test_invite import TestInvite
+from testbot.commands.test_join import TestJoin
+from testbot.commands.test_joke import TestJoke
+from testbot.commands.test_leave import TestLeave
+from testbot.commands.test_list_questions import TestListQuestion
+from testbot.commands.test_login import TestLogin
+from testbot.commands.test_reply import TestReply
+from testbot.commands.test_rpsls import TestRPSLS
+from testbot.commands.test_utils import TestUtils
 
 
 test_collector = TestCollector()
