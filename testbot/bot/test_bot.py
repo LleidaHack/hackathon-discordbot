@@ -22,6 +22,13 @@ from testbot.commands.test_utils import TestUtils
 
 test_collector = TestCollector()
 
+
+@test_collector()
+async def test_joke(interface):
+    await TestJoke(interface).run_tests()
+
+
+
 class TestBot():
 
 
@@ -36,11 +43,7 @@ class TestBot():
         distest.run_dtest_bot([None, os.getenv('LOBOT_ID'), os.getenv('DISCORD_TEST_TOKEN')],test_collector)
 
     #Test Comands
-
-    @test_collector()
-    async def test_ask(self, interface):
-        await TestAsk(interface).run_tests()
-
+"""
     @test_collector()
     async def test_reply(self, interface):
         await TestReply(interface).run_tests()
@@ -61,9 +64,6 @@ class TestBot():
     async def test_join(self, interface):
         await TestJoin(interface).run_tests()
 
-    @test_collector()
-    async def test_joke(self, interface):
-        await TestJoke(interface).run_tests()
 
     @test_collector()
     async def test_leave(self, interface):
@@ -84,3 +84,4 @@ class TestBot():
     @test_collector()
     async def test_utils(self, interface):
         await TestUtils(interface).run_tests()
+        """
