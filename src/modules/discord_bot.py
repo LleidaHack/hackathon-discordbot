@@ -9,6 +9,7 @@ from discord.ext.commands import CommandInvokeError
 from src.crud.firebase import Firebase
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
+from src.modules.commands.broadcast import BroadcastCommand
 from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
@@ -149,6 +150,16 @@ class DiscordBot:
         @discord_commands.has_permissions(administrator=True)
         async def list_questions(ctx):
              await ListQuestions(ctx, self.questions).apply()
+
+        
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def broadcast(ctx):
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.author = ctx.guild.get_member(ctx.author.id)
+            broadcast_command: BroadcastCommand = BroadcastCommand(ctx, os.getenv('TEAMS_CATEGORY_ID'))
+            await broadcast_command.apply()
 
     def start(self):
         logging.info("Starting bot!")
