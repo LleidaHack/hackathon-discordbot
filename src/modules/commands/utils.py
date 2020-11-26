@@ -2,6 +2,8 @@ import io
 import traceback
 from abc import ABC
 from functools import wraps
+import logging
+import os
 
 import discord
 from discord import Guild, TextChannel, File
@@ -9,8 +11,9 @@ from discord import Guild, TextChannel, File
 
 class CatchedError(Exception):
 
-    def __init__(self, *args: object) -> None:
+    def __init__(self, *args: object, original=None) -> None:
         super().__init__(*args)
+        self.original=original
 
 
 class TraceCommand(ABC):
@@ -28,11 +31,12 @@ class TraceCommand(ABC):
             except Exception as e:
                 command = args[0]
                 guild: Guild = command.ctx.guild
-                channel: TextChannel = guild.get_channel(780723137968472075)
+                channel: TextChannel = guild.get_channel(int(os.getenv('LOG_ERROR_CHANNEL_ID')))
                 async with channel.typing():
                     mod_role = filter(lambda x: x.name == 'LleidaHacker', guild.roles).__next__()
                     embed = discord.Embed(title='¡Error! :eye::lips::eye:')
                     value = ''.join(traceback.format_exception(None, e, e.__traceback__))
+                    logging.error(value)
                     embed.add_field(name='Información',
                                     value=f'**Función** *{func.__name__}* of {args[0].__class__.__name__}'
                                           f'\n **User**: {command.ctx.author}\n '
@@ -40,8 +44,7 @@ class TraceCommand(ABC):
                                     inline=False)
                     embed.add_field(name='Traceback', value=f'```{value}```',
                                     inline=False)
-                    logging.error(value)
                     await channel.send(mod_role.mention, embed=embed, file=File(io.StringIO(value), filename='error.txt'))
-                raise CatchedError
+                raise CatchedError(e)
         return wrapper
 

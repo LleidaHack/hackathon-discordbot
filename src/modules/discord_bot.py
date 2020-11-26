@@ -14,6 +14,7 @@ from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
 from src.modules.commands.list_questions import ListQuestions
 from src.modules.commands.ask_reply import AskCommand, ReplyCommand
+from src.modules.commands.info import InfoCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
@@ -103,6 +104,7 @@ class DiscordBot:
         async def on_command_error(ctx, error):
             if isinstance(error, discord_commands.CommandError):
                 from src.modules.commands.utils import CatchedError
+                logging.error(error)
                 if isinstance(error, CommandInvokeError) and isinstance(error.original, CatchedError):
                     await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
                 else:
@@ -137,6 +139,11 @@ class DiscordBot:
                     time.sleep(1)
                 except:
                     pass
+
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def info(ctx):
+            await InfoCommand(ctx).apply()
 
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
