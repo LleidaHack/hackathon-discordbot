@@ -27,7 +27,7 @@ class DiscordBot:
         logging.info("Reading bot config data")
 
         intents = discord.Intents.all()
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents)
+        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents, self_bot=False)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')

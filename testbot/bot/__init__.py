@@ -1,1 +1,0 @@
-from testbot.bot.test_bot import TestBot
