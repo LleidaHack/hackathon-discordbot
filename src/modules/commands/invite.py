@@ -32,6 +32,7 @@ class InviteCommand(FireBaseCommand):
             await self.send_msg_to_people(group, self.ctx.guild, people)
         except CommandError as er:
             logging.warning(f"Ha saltado el error {er}")
+            raise er
 
     async def get_people(self, discord_user, group):
         people_names = self.get_people_names(self.ctx.message.content)
@@ -90,3 +91,4 @@ class InviteCommand(FireBaseCommand):
             self.DB.create_invitation(p.discord_id, group.name)
             await member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
+            await self.ctx.author(f'Se ha invitado al grupo {group.name} tu amigo {p.nick}')
