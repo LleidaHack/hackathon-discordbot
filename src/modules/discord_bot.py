@@ -9,11 +9,13 @@ from discord.ext.commands import CommandInvokeError
 from src.crud.firebase import Firebase
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
+from src.modules.commands.broadcast import BroadcastCommand
 from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
 from src.modules.commands.list_questions import ListQuestions
 from src.modules.commands.ask_reply import AskCommand, ReplyCommand
+from src.modules.commands.info import InfoCommand
 from src.modules.login import StartLogin, FinishLogin
 from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
@@ -27,7 +29,7 @@ class DiscordBot:
         logging.info("Reading bot config data")
 
         intents = discord.Intents.all()
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents)
+        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents, self_bot=False)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
@@ -103,6 +105,7 @@ class DiscordBot:
         async def on_command_error(ctx, error):
             if isinstance(error, discord_commands.CommandError):
                 from src.modules.commands.utils import CatchedError
+                logging.error(error)
                 if isinstance(error, CommandInvokeError) and isinstance(error.original, CatchedError):
                     await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
                 else:
@@ -140,8 +143,23 @@ class DiscordBot:
 
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
+        async def info(ctx):
+            await InfoCommand(ctx).apply()
+
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
         async def list_questions(ctx):
              await ListQuestions(ctx, self.questions).apply()
+
+        
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def broadcast(ctx):
+            if not ctx.guild:
+                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.author = ctx.guild.get_member(ctx.author.id)
+            broadcast_command: BroadcastCommand = BroadcastCommand(ctx, os.getenv('TEAMS_CATEGORY_ID'))
+            await broadcast_command.apply()
 
     def start(self):
         logging.info("Starting bot!")

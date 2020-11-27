@@ -1,7 +1,12 @@
-## HackEPS 2020 - Discord Bot
+# HackEPS 2020 - Discord
 
 
-## Test
+## Usage
+```
+python bot.py
+```
+
+## Unit Test
 ```
 python -m unittest
 ```

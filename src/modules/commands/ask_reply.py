@@ -25,7 +25,10 @@ class AskCommand(BaseCommand):
             channelId = AskCommand.get_channel_id(self.ctx, 'preguntas_participantes')
             channel = self.client.get_channel(channelId)
             self.pool.add_question(self.ctx.author, self.question)
-            await channel.send(embed=ask_texts.SEND_TO_ADMINS(str(self.pool.get_last_question()), str(self.ctx.author), self.question))
+            question_id = self.pool.get_last_question()
+            embed = ask_texts.SEND_TO_ADMINS(str(question_id), str(self.ctx.author), self.question)
+            embed.add_field(name='Usage:', value=f"""eps!reply {question_id} <answer>""", inline=False)
+            await channel.send(embed=embed)
         else:
             await self.ctx.author.send(ask_texts.EMBED_VOID_MESSAGE)
 
@@ -48,6 +51,7 @@ class ReplyCommand(BaseCommand):
     async def apply(self):
         import src.texts.ask_reply_texts as ask_texts
         await self.pool.get_author(self.num_question).send(embed=ask_texts.REPLY_TO_USER(str(self.ctx.author),self.pool.get_question(self.num_question),self.reply))
+        await self.ctx.send(f'Enviada respuesta {self.num_question}')
         self.pool.remove_answered_question(self.num_question)
 
     def __get_reply_from_context(self):
