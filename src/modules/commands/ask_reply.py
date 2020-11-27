@@ -51,6 +51,7 @@ class ReplyCommand(BaseCommand):
     async def apply(self):
         import src.texts.ask_reply_texts as ask_texts
         await self.pool.get_author(self.num_question).send(embed=ask_texts.REPLY_TO_USER(str(self.ctx.author),self.pool.get_question(self.num_question),self.reply))
+        await self.ctx.send(f'Enviada respuesta {self.num_question}')
         self.pool.remove_answered_question(self.num_question)
 
     def __get_reply_from_context(self):
