@@ -20,7 +20,7 @@ class BroadcastCommand(BaseCommand):
             return
         msg_cont = await self.ctx.fetch_message(msg.reference.message_id)
         category = discord.utils.get(self.ctx.guild.categories, id=int(self.category_id))
-        for channel in category.channels:
+        for channel in category.text_channels:
             logging.info(f'channel {channel}')
             await channel.send(msg_cont.content)
         return
