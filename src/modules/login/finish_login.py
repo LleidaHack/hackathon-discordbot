@@ -61,8 +61,8 @@ class FinishLogin:
             await self.add_group_role(member, web_group)
             discord_group.add_user(discord_user.id)
             self.DB.create_or_update_group(discord_group)
-            discord_user = ModelUser(discord_user.name, discord_user.discriminator, discord_user.id, web_group.name, email)
-            self.DB.create_or_update_user(discord_user)
+            modal_user = ModelUser(discord_user.name, discord_user.discriminator, discord_user.id, web_group.name, email)
+            self.DB.create_or_update_user(modal_user)
         else:
             logging.info(f"Se creará {web_group.name} y con sus roles")
             modal_user = ModelUser(discord_user.name, discord_user.discriminator, discord_user.id, web_group.name, email)

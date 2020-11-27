@@ -137,6 +137,15 @@ class DiscordBot:
                 except:
                     pass
 
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def publish_rules(ctx):
+            import src.texts.rules_text as txt
+            await ctx.message.delete()
+            emb = txt.RULES_MESSAGE
+            print(emb)
+           # emb.set_thumbnail(url=os.getenv("EVENT_LOGO"))
+            await ctx.send(embed=emb, allowed_mentions = discord.AllowedMentions().all())
     def start(self):
         logging.info("Starting bot!")
         self.client.run(self.token)
