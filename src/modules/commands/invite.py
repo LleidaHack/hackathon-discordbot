@@ -87,8 +87,9 @@ class InviteCommand(FireBaseCommand):
 
     async def send_msg_to_people(self, group, guild, people):
         for p in people:
-            member: Member = guild.get_member(p.discord_id)
+            guild_member: Member = guild.get_member(p.discord_id)
             self.DB.create_invitation(p.discord_id, group.name)
-            await member.send(
+            await guild_member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
-            await self.ctx.author(f'Se ha invitado al grupo {group.name} tu amigo {p.name}')
+
+            await self.ctx.author.send(f'Has invitado a {guild_member.display_name}.')
