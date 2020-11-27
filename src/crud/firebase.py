@@ -96,7 +96,7 @@ class Firebase:
     def create_invitation(self, user_id, group_name) -> None:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
         json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
-        todo_ref.document(None).set(json)
+        todo_ref.document(str(user_id) + group_name).set(json)
 
     def get_invitations(self, user_id) -> List[Tuple[int, Invitation]]:
         todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
