@@ -91,4 +91,4 @@ class InviteCommand(FireBaseCommand):
             self.DB.create_invitation(p.discord_id, group.name)
             await member.send(
                 f"Has sido invitado al grupo {group.name}\nPara formar parte del grupo usa el comando eps!join {group.name}")
-            await self.ctx.author(f'Se ha invitado al grupo {group.name} tu amigo {p.nick}')
+            await self.ctx.author(f'Se ha invitado al grupo {group.name} tu amigo {p.name}')
