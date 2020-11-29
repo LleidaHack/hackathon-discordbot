@@ -33,7 +33,8 @@ python3 -m pip install -r requirements.txt
 ```
 
 > **3. Configure .env**
-First of all, we have to copy `.env.sample` file to `.env`.
+
+First of all, we have to copy `.env.sample` file to `.env`.\
 **Linux and Windows PowerShell**
 ```
 $ cp .env.sample .env
@@ -65,8 +66,9 @@ HACKESP2020_DB_PATH={The insciption webpage database path on firebase}
 DISCORD_DB_PATH={The bot database path on firebase}
 ```
 
-> **Execution**
-To execute it, you have to run the bot.py python file. A way to do it is using the following command:\
+> **4. Execution**
+
+In order to execute it, you have to run the bot.py python file. A way to do it is using the following command:
 ```
 python3 bot.py
 ```
