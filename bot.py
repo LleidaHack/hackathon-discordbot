@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys
+import sys, os
 
 from dotenv import load_dotenv
 if len(sys.argv) != 1:
@@ -13,6 +13,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.debug("Reading env configuration")
 
+    if not os.path.isfile(os.getenv('GOOGLE_APPLICATION_CREDENTIALS')):
+        with open(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'), 'w') as file:
+            file.write(os.getenv('GOOGLE_CREDENTIALS'))
     bot = DiscordBot()
     bot.start()
 
