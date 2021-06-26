@@ -29,8 +29,7 @@ class WebDatabase:
 
 class BotDatabase:
     def __init__(self):
-        self.cred = credentials.Certificate("src/certificate.json")
-        self.default_app = initialize_app(self.cred)
+        self.default_app = initialize_app()
         self.db = firestore.client()
 
     def create_or_update_user(self, user: User) -> None:
