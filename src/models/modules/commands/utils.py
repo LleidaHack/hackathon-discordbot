@@ -33,7 +33,7 @@ class TraceCommand(ABC):
                 guild: Guild = command.ctx.guild
                 channel: TextChannel = guild.get_channel(int(os.getenv('LOG_ERROR_CHANNEL_ID')))
                 async with channel.typing():
-                    mod_role = filter(lambda x: x.name == os.getenv('ADMIN_ROLE'), guild.roles).__next__()
+                    mod_role = filter(lambda x: x.name == 'LleidaHacker', guild.roles).__next__()
                     embed = discord.Embed(title='¡Error! :eye::lips::eye:')
                     value = ''.join(traceback.format_exception(None, e, e.__traceback__))
                     logging.error(value)
@@ -41,6 +41,8 @@ class TraceCommand(ABC):
                                     value=f'**Función** *{func.__name__}* of {args[0].__class__.__name__}'
                                           f'\n **User**: {command.ctx.author}\n '
                                           f'**Command**: {command.ctx.message.content}',
+                                    inline=False)
+                    embed.add_field(name='Traceback', value=f'```{value}```',
                                     inline=False)
                     await channel.send(mod_role.mention, embed=embed, file=File(io.StringIO(value), filename='error.txt'))
                 raise CatchedError(e)

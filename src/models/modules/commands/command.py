@@ -6,7 +6,7 @@ from typing import Optional
 
 from discord.ext.commands import Context
 
-from src.crud.firebase import BotDatabase, WebDatabase
+from src.crud.firebase import Firebase
 
 
 class BaseCommand(ABC):
@@ -21,7 +21,7 @@ class BaseCommand(ABC):
 
 class FireBaseCommand(BaseCommand, ABC):
 
-    def __init__(self, context: Context, database: BotDatabase):
+    def __init__(self, context: Context, database: Firebase):
         super().__init__(context)
         self.DB = database
 

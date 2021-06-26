@@ -5,7 +5,7 @@ import discord
 from discord import Guild, Member
 from discord.ext.commands import Context
 
-from src.crud.firebase import BotDatabase
+from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.modules.commands import FireBaseCommand
 from src.models.user import User as ModelUser
@@ -13,7 +13,7 @@ from src.modules.commands.utils import TraceCommand
 
 
 class LeaveCommand(FireBaseCommand):
-    def __init__(self, context: Context, database: BotDatabase):
+    def __init__(self, context: Context, database: Firebase):
         super().__init__(context, database)
 
     @TraceCommand.traceback_print

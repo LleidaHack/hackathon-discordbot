@@ -3,13 +3,14 @@ import logging
 import discord
 from discord import Guild, Role, Member
 
-from src.crud.firebase import BotDatabase
+from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User
 
 
 class GroupCreator:
-    def __init__(self, database: BotDatabase, guild: Guild):
+    def __init__(self, category_id: str, database: Firebase, guild: Guild):
+        self.category = category_id
         self.database = database
         self.guild: Guild = guild
 
@@ -37,9 +38,12 @@ class GroupCreator:
             self.guild.default_role: discord.PermissionOverwrite(read_messages=False),
             role: discord.PermissionOverwrite(read_messages=True)
         }
-        logging.info("[CREATE GROUP - OK] Creando canales de chat y voz")
-        await self.guild.create_text_channel(group.name, overwrites=overwrites)
-        await self.guild.create_voice_channel(group.name, overwrites=overwrites)
+        for cat in self.guild.categories:
+            if str(cat.id) == self.category:
+                logging.info("[CREATE GROUP - OK] Creando canales de chat y voz")
+                await self.guild.create_text_channel(group.name, overwrites=overwrites, category=cat)
+                await self.guild.create_voice_channel(group.name, overwrites=overwrites, category=cat)
+                break
 
     async def add_user_and_update(self, group: Group, modal_user: User):
         await self.update_user_database(group, modal_user)

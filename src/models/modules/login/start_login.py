@@ -4,12 +4,12 @@ import logging
 from discord import User
 
 import src.texts.login_text as login_texts
-from src.crud.firebase import BotDatabase
+from src.crud.firebase import Firebase
 from src.modules.pools.authentication import AuthenticationPool
 
 
 class StartLogin:
-    def __init__(self, database: BotDatabase, pool: AuthenticationPool):
+    def __init__(self, database: Firebase, pool: AuthenticationPool):
         self.database = database
         self.pool = pool
 

@@ -5,9 +5,9 @@ import traceback
 
 import discord
 from discord.ext import commands as discord_commands
-from discord.ext.commands import CommandNotFound
+from discord.ext.commands import CommandInvokeError
 
-from src.crud.firebase import BotDatabase, WebDatabase
+from src.crud.firebase import Firebase
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
 from src.modules.commands.broadcast import BroadcastCommand
@@ -22,8 +22,8 @@ from src.modules.pools.authentication import AuthenticationPool
 from src.modules.pools.questions import QuestionPool
 from src.modules.utils import GroupCreator
 
-BOT_DB = BotDatabase()
-WEB_DB = WebDatabase()
+DB = Firebase()
+
 
 class DiscordBot:
     def __init__(self):
@@ -64,28 +64,28 @@ class DiscordBot:
 
         @self.client.command()
         async def login(ctx):
-            await LoginCommand(ctx, BOT_DB, ctx.author, self.users_pool).apply()
+            await LoginCommand(ctx, DB, ctx.author, self.users_pool).apply()
 
         @self.client.command()
         async def create(ctx):
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            group_creator: GroupCreator = GroupCreator(BOT_DB, ctx.guild)
-            create: CreateCommand = CreateCommand(ctx, BOT_DB, ctx.author, group_creator, WEB_DB)
+            group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, ctx.guild)
+            create: CreateCommand = CreateCommand(ctx, DB, ctx.author, group_creator)
             await create.apply()
 
         @self.client.command()
         async def invite(ctx):
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            invite: InviteCommand = InviteCommand(ctx, BOT_DB)
+            invite: InviteCommand = InviteCommand(ctx, DB)
             await invite.apply()
 
         @self.client.command()
         async def join(ctx):
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
-            join: JoinCommand = JoinCommand(ctx, BOT_DB)
+            join: JoinCommand = JoinCommand(ctx, DB)
             await join.apply()
 
         @self.client.command()
@@ -93,14 +93,14 @@ class DiscordBot:
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
                 ctx.author = ctx.guild.get_member(ctx.author.id)
-            leave: LeaveCommand = LeaveCommand(ctx, BOT_DB)
+            leave: LeaveCommand = LeaveCommand(ctx, DB)
             await leave.apply()
 
         @self.client.event
         async def on_member_join(member):
             import src.texts.login_text as login_texts
             await member.send(embed=login_texts.WELCOME_MESSAGE)
-            await StartLogin(BOT_DB, self.users_pool).start_login(member)
+            await StartLogin(DB, self.users_pool).start_login(member)
 
         @self.client.event
         async def on_command_error(ctx, error):
@@ -109,23 +109,23 @@ class DiscordBot:
             if isinstance(error, discord_commands.CommandError):
                 from src.modules.commands.utils import CatchedError
                 logging.error(error)
-                if isinstance(error, CommandNotFound):
+                if isinstance(error, CommandInvokeError) and isinstance(error.original, CatchedError):
+                    await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
+                else:
                     await ctx.send(
                         "¿Has escrito bien el comando? Escribe `eps!help` si quieres saber los comandos :satisfied:")
-                else:
-                    await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
             else:
                 raise error
 
         @self.client.listen('on_message')
         async def on_message(message):
             msg: str = message.content
-            if not msg.startswith(os.getenv('DISCORD_PREFIX')) and self.users_pool.has(message.author) and \
+            if not msg.startswith("eps!") and self.users_pool.has(message.author) and \
                     not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(int(os.getenv('GUILD')))
-                group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), BOT_DB, guild)
-                login_manager: FinishLogin = FinishLogin(guild, BOT_DB, WEB_DB, self.users_pool, os.getenv("HACKER_ROLE"),
+                group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), DB, guild)
+                login_manager: FinishLogin = FinishLogin(guild, DB, self.users_pool, os.getenv("HACKER_ROLE"),
                                                          group_creator)
                 await login_manager.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")

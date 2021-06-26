@@ -1,8 +1,7 @@
 import logging
-import os
+import re
 
 from discord.ext.commands import Context
-from discord.ext.commands.bot import Bot
 
 from src.modules.commands import BaseCommand
 from src.modules.commands.utils import TraceCommand
@@ -11,11 +10,11 @@ from src.modules.pools.questions import QuestionPool
 
 class AskCommand(BaseCommand):
 
-    def __init__(self, context: Context, pool: QuestionPool, client: Bot):
+    def __init__(self, context: Context, pool: QuestionPool, client):
         super().__init__(context)
         self.client = client
         self.pool = pool
-        self.question = ''.join(self.ctx.message.content.split(' ')[1:])
+        self.question = self.ctx.message.content[7:]
 
     @TraceCommand.traceback_print
     async def apply(self):
@@ -23,8 +22,7 @@ class AskCommand(BaseCommand):
         if self.question != '':
             logging.info("Enviando pregunta")
             await self.ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-            await self.ctx.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-            channelId = int(os.getenv('INFO_BOT_CHANNEL_ID'))
+            channelId = AskCommand.get_channel_id(self.ctx, 'preguntas_participantes')
             channel = self.client.get_channel(channelId)
             self.pool.add_question(self.ctx.author, self.question)
             question_id = self.pool.get_last_question()

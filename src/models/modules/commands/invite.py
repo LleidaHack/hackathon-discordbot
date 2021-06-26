@@ -6,7 +6,7 @@ from discord import User as DiscordUser, Member
 from discord.ext.commands import Context
 
 import src.texts.invite_texts as txt
-from src.crud.firebase import BotDatabase
+from src.crud.firebase import Firebase
 from src.models.group import Group
 from src.models.user import User as ModelUser
 from src.modules.commands import FireBaseCommand
@@ -16,7 +16,7 @@ from src.modules.commands.utils import TraceCommand
 
 class InviteCommand(FireBaseCommand):
 
-    def __init__(self, context: Context, database: BotDatabase):
+    def __init__(self, context: Context, database: Firebase):
         super().__init__(context, database)
 
     @TraceCommand.traceback_print
