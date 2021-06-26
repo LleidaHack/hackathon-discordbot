@@ -166,4 +166,5 @@ class DiscordBot:
 
     def start(self):
         logging.info("Starting bot!")
+        web_server.server()
         self.client.run(self.token)
