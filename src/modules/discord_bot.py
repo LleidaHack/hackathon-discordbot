@@ -6,7 +6,6 @@ import traceback
 import discord
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandNotFound
-import src.modules.web_server as web_server
 from src.crud.firebase import BotDatabase, WebDatabase
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
