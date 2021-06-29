@@ -1,4 +1,5 @@
-firebase_admin
-python-dotenv
-discord
-pandas
+discord==1.7.3
+discord.py==1.7.3
+firebase-admin==5.0.1
+pandas==1.2.4
+python-dotenv==0.18.0
