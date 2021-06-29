@@ -33,7 +33,7 @@ COMMANDS_DESCRIPTION_MESSAGE=f"""
 
 EMBED_HELP_MESSAGE = discord.Embed(
     colour=discord.Colour.blue(),
-    title="{EVENT_NAME} {EVENT_YEAR}",
+    title=f"{EVENT_NAME} {EVENT_YEAR}",
     description=COMMANDS_DESCRIPTION_MESSAGE
 )
 SERVER_ERROR="¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:"
