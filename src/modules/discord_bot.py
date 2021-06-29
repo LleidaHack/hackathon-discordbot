@@ -14,6 +14,7 @@ from src.modules.commands.broadcast import BroadcastCommand
 from src.modules.commands.join import JoinCommand
 from src.modules.commands.leave import LeaveCommand
 from src.modules.commands.login import LoginCommand
+from src.modules.commands.register import RegisterCommand
 from src.modules.commands.list_questions import ListQuestions
 from src.modules.commands.ask_reply import AskCommand, ReplyCommand
 from src.modules.commands.info import InfoCommand
@@ -154,7 +155,13 @@ class DiscordBot:
         async def list_questions(ctx):
              await ListQuestions(ctx, self.questions).apply()
 
-        
+        @self.client.command()
+        @discord_commands.has_permissions(administrator=True)
+        async def register(ctx):
+            register: RegisterCommand = RegisterCommand(ctx ,BOT_DB)
+            await register.apply()
+
+
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
         async def broadcast(ctx):
