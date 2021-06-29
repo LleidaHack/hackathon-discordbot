@@ -1,4 +1,4 @@
-# HackEPS 2020 - Discord
+# Hackathon Bot - Discord
 
 ## Usage
 
@@ -14,7 +14,7 @@
 **Installation**
 > **1. Clone repository**
 ```
-git clone https://github.com/LleidaHack/hackeps-2020-discordbot
+git clone https://github.com/LleidaHack/hackathon-discordbot
 ```
 
 > **2. Install requierements**
@@ -47,24 +47,33 @@ $ cp .env.sample .env
 After that, we have to fill the **`.env`** (notice that **YOU DON'T HAVE TO TOUCH** `.env.sample`) with your bot information:
 ```
 # ------------------------------------------------------------------------------#
-#---------------------------HACKEPS 2020 DISCORD BOT----------------------------#
+#-------------------------HACKATHON DISCORD BOT--------------------------#
 # ------------------------------------------------------------------------------#
 
 
 
 #-----------------------------Discord Configuration-----------------------------#
-DISCORD_TOKEN={Discord bot token}
-DISCORD_PREFIX={Bot command prefix}
-GUILD={Guild of the bot ID}
-TEAMS_CATEGORY_ID ={The category ID from the guild where the teams channels will be created}
-LOG_ERROR_CHANNEL_ID={The channel ID where the bot will throw a stack excepcion if something wrong happens}
-INFO_BOT_CHANNEL_ID={The channel where the bot will write the bot information}
-HACKER_ROLE={Name of the rol for the logged users}
+DISCORD_TOKEN=
+DISCORD_PREFIX=
+GUILD=
+LOG_ERROR_CHANNEL_ID=
+INFO_BOT_CHANNEL_ID=
+HACKER_ROLE=Hacker
+ADMIN_ROLE=LleidaHacker
+GOOGLE_CREDENTIALS=
+
+GOOGLE_APPLICATION_CREDENTIALS=src/certificate.json
 #-----------------------------Database Configuration----------------------------#
-#----------------------------------HackEPS 2020---------------------------------#
-HACKESP2020_DB_PATH={The insciption webpage database path on firebase}
-DISCORD_DB_PATH={The bot database path on firebase}
-```
+# hackeps = se lee la base de datos de participantes de hackeps
+# csv = Lectura de CSV con los emails de los participantes
+USER_AUTHTYPE=csv
+HACKEPS_DB_PATH=
+CSV_PATH =
+
+#----------------------------------BOT DATABASE---------------------------------#
+DISCORD_DB_PATH=
+
+
 
 > **4. Execution**
 

@@ -29,7 +29,7 @@ class AskCommand(BaseCommand):
             self.pool.add_question(self.ctx.author, self.question)
             question_id = self.pool.get_last_question()
             embed = ask_texts.SEND_TO_ADMINS(str(question_id), str(self.ctx.author), self.question)
-            embed.add_field(name='Usage:', value=f"""eps!reply {question_id} <answer>""", inline=False)
+            embed.add_field(name='Usage:', value=f"""{ask_texts.COMMAND_PREFIX}reply {question_id} <answer>""", inline=False)
             await channel.send(embed=embed)
         else:
             await self.ctx.author.send(ask_texts.EMBED_VOID_MESSAGE)

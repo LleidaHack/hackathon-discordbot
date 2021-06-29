@@ -6,6 +6,7 @@ import traceback
 import discord
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandInvokeError
+from discord.team import Team
 from src.crud.firebase import BotDatabase, WebDatabase
 from src.modules.commands.create import CreateCommand
 from src.modules.commands.invite import InviteCommand
@@ -107,12 +108,12 @@ class DiscordBot:
             logging.error(value)
             if isinstance(error, discord_commands.CommandError):
                 from src.modules.commands.utils import CatchedError
+                import src.texts.help_texts as texts
                 logging.error(error)
                 if isinstance(error, CommandInvokeError) and isinstance(error.original, CatchedError):
-                    await ctx.send("¡Vaya! Hemos tenido un problemilla con el servidor, ya está informado :grin:")
+                    await ctx.send(texts.SERVER_ERROR)
                 else:
-                    await ctx.send(
-                        "¿Has escrito bien el comando? Escribe `eps!help` si quieres saber los comandos :satisfied:")
+                    await ctx.send(texts.INVALID_COMMAND)
             else:
                 raise error
 

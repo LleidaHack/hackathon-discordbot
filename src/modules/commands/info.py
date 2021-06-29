@@ -12,23 +12,24 @@ class InfoCommand(BaseCommand):
     @TraceCommand.traceback_print
     async def apply(self):
         import src.texts.help_texts as texts
+        from src.texts.const import const 
         logging.info("Enviando mensaje de información")
         bot_info_channel_id = int(os.getenv('INFO_BOT_CHANNEL_ID'))
         channel = self.ctx.guild.get_channel(bot_info_channel_id)
 
         embed = discord.Embed(
             colour=discord.Colour.blue(),
-            title="HackEPS 2020",
+            title=f"{const.EVENT_NAME} {const.EVENT_YEAR}" ,
             description=texts.START_DESCRIPTION_MESSAGE
         )
-        embed.add_field(name='eps!help',value=texts.HELP_COMMAND, inline=False)
-        embed.add_field(name='eps!login',value=texts.LOGIN_COMMAND, inline=False)
-        embed.add_field(name='eps!create <team_name>',value=texts.CREATE_COMMAND, inline=False)
-        embed.add_field(name='eps!invite <discord_user>',value=texts.INVITE_COMMAND, inline=False)
-        embed.add_field(name='eps!join <team_name>',value=texts.JOIN_COMMAND, inline=False)
-        embed.add_field(name='eps!leave',value=texts.LEAVE_COMMAND, inline=False)
-        embed.add_field(name='eps!ask <question>',value=texts.ASK_COMMAND, inline=False)
-        embed.add_field(name='eps!joke',value=texts.JOKE_COMMAND, inline=False)
-        embed.add_field(name='eps!rpsls',value=texts.RPSLS_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}help',value=texts.HELP_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}login',value=texts.LOGIN_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}create <team_name>',value=texts.CREATE_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}invite <discord_user>',value=texts.INVITE_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}join <team_name>',value=texts.JOIN_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}leave',value=texts.LEAVE_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}ask <question>',value=texts.ASK_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}joke',value=texts.JOKE_COMMAND, inline=False)
+        embed.add_field(name=f'{const.COMMAND_PREFIX}rpsls',value=texts.RPSLS_COMMAND, inline=False)
 
         await channel.send(embed=embed)

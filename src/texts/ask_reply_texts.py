@@ -1,9 +1,9 @@
 import discord
-
+from src.texts.const import *
 GLOBAL_ASK_MESSAGE = "¡Te he enviado la información por privado! :)"
 EMBED_ASK_MESSAGE = discord.Embed(
             colour = discord.Colour.blue(),
-            title="HackEPS 2020",
+            title=f"{EVENT_NAME} {EVENT_YEAR}",
             description=
             """
                 ¡Ey! tu pregunta ha sido enviada a la organizacion, en cuanto puedan te van a responder.
