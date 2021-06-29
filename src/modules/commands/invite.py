@@ -1,4 +1,4 @@
-import logging
+import logging, os
 from typing import Optional, List
 
 import discord
@@ -42,7 +42,7 @@ class InviteCommand(FireBaseCommand):
         return people
 
     def get_people_names(self, content: str):
-        start = len('eps!invite')
+        start = len(os.getenv('DISCORD_PREFIX')) +  len('!invite')
         content = content[start + 1:].split()
         res = []
         actual = []
