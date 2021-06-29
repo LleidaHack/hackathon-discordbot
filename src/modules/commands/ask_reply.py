@@ -15,7 +15,7 @@ class AskCommand(BaseCommand):
         super().__init__(context)
         self.client = client
         self.pool = pool
-        self.question = ''.join(self.ctx.message.content.split(' ')[1:])
+        self.question = ' '.join(self.ctx.message.content.split(' ')[1:])
 
     @TraceCommand.traceback_print
     async def apply(self):
