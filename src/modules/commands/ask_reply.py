@@ -1,6 +1,8 @@
 import logging
 import os
 
+import toml
+config = toml.load('config.toml')
 from discord.ext.commands import Context
 from discord.ext.commands.bot import Bot
 
@@ -24,7 +26,7 @@ class AskCommand(BaseCommand):
             logging.info("Enviando pregunta")
             await self.ctx.author.send(embed=ask_texts.EMBED_ASK_MESSAGE)
             await self.ctx.send(embed=ask_texts.EMBED_ASK_MESSAGE)
-            channelId = int(os.getenv('INFO_BOT_CHANNEL_ID'))
+            channelId = config['INFO_BOT_CHANNEL_ID']
             channel = self.client.get_channel(channelId)
             self.pool.add_question(self.ctx.author, self.question)
             question_id = self.pool.get_last_question()

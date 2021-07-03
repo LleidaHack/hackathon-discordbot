@@ -1,0 +1,17 @@
+DISCORD_PREFIX= "PREFIJO"
+GUILD= #ID del servidor del evento
+LOG_ERROR_CHANNEL_ID= #ID del canal para mostrar errores
+INFO_BOT_CHANNEL_ID= #ID del canal para mostrar las preguntas de los usuarios
+HACKER_ROLE= "Rol de los participantes (previamente creado)"
+ADMIN_ROLE= "Rol de los administradores del evento (previamente creado)"
+
+#-----------------------------Database Configuration----------------------------#
+# hackeps = se lee la base de datos de participantes de hackeps
+# csv = Lectura de CSV con los emails de los participantes
+USER_AUTHTYPE= "csv | hackeps"
+HACKEPS_DB_PATH= ""
+CSV_PATH = ""
+
+#----------------------------------BOT DATABASE---------------------------------#
+DISCORD_DB_PATH= ""
+

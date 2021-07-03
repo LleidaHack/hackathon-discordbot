@@ -2,7 +2,8 @@
 import logging
 import os
 import traceback
-
+import toml
+config = toml.load('config.toml')
 import discord
 from discord.ext import commands as discord_commands
 from discord.ext.commands import CommandInvokeError
@@ -31,7 +32,7 @@ class DiscordBot:
         logging.info("Reading bot config data")
 
         intents = discord.Intents.all()
-        self.client = discord_commands.Bot(os.getenv('DISCORD_PREFIX'), guild_subscriptions=True, intents=intents, self_bot=False)
+        self.client = discord_commands.Bot(config['DISCORD_PREFIX'], guild_subscriptions=True, intents=intents, self_bot=False)
         self.token = os.getenv('DISCORD_TOKEN')
         self.index = 0
         self.client.remove_command('help')
@@ -70,7 +71,7 @@ class DiscordBot:
         @self.client.command()
         async def create(ctx):
             if not ctx.guild:
-                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.guild = self.client.get_guild(config['GUILD'])
             group_creator: GroupCreator = GroupCreator(BOT_DB, ctx.guild)
             create: CreateCommand = CreateCommand(ctx, BOT_DB, ctx.author, group_creator, WEB_DB)
             await create.apply()
@@ -78,21 +79,21 @@ class DiscordBot:
         @self.client.command()
         async def invite(ctx):
             if not ctx.guild:
-                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.guild = self.client.get_guild(config['GUILD'])
             invite: InviteCommand = InviteCommand(ctx, BOT_DB)
             await invite.apply()
 
         @self.client.command()
         async def join(ctx):
             if not ctx.guild:
-                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.guild = self.clientget_guild(config['GUILD'])
             join: JoinCommand = JoinCommand(ctx, BOT_DB)
             await join.apply()
 
         @self.client.command()
         async def leave(ctx):
             if not ctx.guild:
-                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.guild = self.client.get_guild(config['GUILD'])
                 ctx.author = ctx.guild.get_member(ctx.author.id)
             leave: LeaveCommand = LeaveCommand(ctx, BOT_DB)
             await leave.apply()
@@ -121,12 +122,12 @@ class DiscordBot:
         @self.client.listen('on_message')
         async def on_message(message):
             msg: str = message.content
-            if not msg.startswith(os.getenv('DISCORD_PREFIX')) and self.users_pool.has(message.author) and \
+            if not msg.startswith(config['DISCORD_PREFIX']) and self.users_pool.has(message.author) and \
                     not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
-                guild = self.client.get_guild(int(os.getenv('GUILD')))
-                group_creator: GroupCreator = GroupCreator(os.getenv('TEAMS_CATEGORY_ID'), BOT_DB, guild)
-                login_manager: FinishLogin = FinishLogin(guild, BOT_DB, WEB_DB, self.users_pool, os.getenv("HACKER_ROLE"),
+                guild = self.client.get_guild(config['GUILD'])
+                group_creator: GroupCreator = GroupCreator(config['TEAMS_CATEGORY_ID'], BOT_DB, guild)
+                login_manager: FinishLogin = FinishLogin(guild, BOT_DB, WEB_DB, self.users_pool, config["HACKER_ROLE"],
                                                          group_creator)
                 await login_manager.finish_login(message.author, message.content)
                 logging.info(f"Email checked: {message.content}")
@@ -166,9 +167,9 @@ class DiscordBot:
         @discord_commands.has_permissions(administrator=True)
         async def broadcast(ctx):
             if not ctx.guild:
-                ctx.guild = self.client.get_guild(int(os.getenv('GUILD')))
+                ctx.guild = self.client.get_guild(config['GUILD'])
                 ctx.author = ctx.guild.get_member(ctx.author.id)
-            broadcast_command: BroadcastCommand = BroadcastCommand(ctx, os.getenv('TEAMS_CATEGORY_ID'))
+            broadcast_command: BroadcastCommand = BroadcastCommand(ctx, config['TEAMS_CATEGORY_ID'])
             await broadcast_command.apply()
 
     def start(self):

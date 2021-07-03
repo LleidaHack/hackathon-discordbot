@@ -1,3 +1,6 @@
+import toml
+config = toml.load('config.toml')
+
 import os
 import logging
 from src.crud.db_modules.csv import CSVDataBase
@@ -14,7 +17,7 @@ from src.models.user import User
 from src.models.webuser import WebUser
 class WebDatabase:
     def __init__(self):
-        self.authentication_type = os.getenv('USER_AUTHTYPE')
+        self.authentication_type = config['USER_AUTHTYPE']
         self.web_database = None
         print(f'{self.authentication_type} INICIALIZADO .....')
         if self.authentication_type == 'hackeps':
@@ -33,7 +36,7 @@ class BotDatabase:
         self.db = firestore.client()
 
     def create_or_update_user(self, user: User) -> None:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/users')
 
         json = user.__dict__
         """{'username': user.username, "discriminator": user.discriminator, "id": user.discord_id,
@@ -43,7 +46,7 @@ class BotDatabase:
 
 
     def get_user(self, discord_id=None, username=None, discriminator=None, email=None) -> Union[User, bool]:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/users')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/users')
         if discord_id:
             doc = todo_ref.document(str(discord_id)).get()
             print(doc.to_dict())
@@ -67,13 +70,13 @@ class BotDatabase:
         return self.get_user(username=username, discriminator=discriminator)
 
     def create_or_update_group(self, group: Group) -> None:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/groups')
         json = group.__dict__  # {'name': group.group_name, "members": group.users, "role_id": group.role_id}
         doc = todo_ref.document(group.name)
         doc.set(json)
 
     def get_group(self, group_name: str) -> Optional[Group]:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/groups')
         if group_name:
             doc = todo_ref.document(group_name).get()
             if doc.to_dict():
@@ -81,12 +84,12 @@ class BotDatabase:
         return None
 
     def create_invitation(self, user_id, group_name) -> None:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
         json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
         todo_ref.document(str(user_id) + group_name).set(json)
 
     def get_invitations(self, user_id) -> List[Tuple[int, Invitation]]:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
         res = []
         for usr in todo_ref.stream():
             if usr.to_dict()['user_id'] == user_id:
@@ -95,7 +98,7 @@ class BotDatabase:
         return res
 
     def get_invitation(self, user_id, group_name) -> Optional[Tuple[int, Invitation]]:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/invite')
         for usr in todo_ref.stream():
             if usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name:
                 invit = Invitation.from_dict(usr.to_dict())
@@ -103,7 +106,7 @@ class BotDatabase:
         return None
 
     def accept_invitation(self, user_id, group_name) -> Optional[bool]:
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/invite')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
         invitation = self.get_invitation(user_id, group_name)
         if invitation:
             user_id, invitation = invitation
@@ -113,7 +116,7 @@ class BotDatabase:
         return False
 
     def delete_group (self, group_name):
-        todo_ref = self.db.collection(os.getenv('DISCORD_DB_PATH') + '/groups')
+        todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/groups')
         if group_name:
             doc = todo_ref.document(group_name)
             if doc:

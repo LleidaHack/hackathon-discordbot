@@ -1,3 +1,5 @@
+import toml
+config = toml.load('config.toml')
 import logging
 from src.crud.db_modules.db_module import WEB_DATABASE
 import os
@@ -10,7 +12,7 @@ import pandas as pd
 
 class CSVDataBase(WEB_DATABASE):
     def __init__(self) -> None:
-        self.csv_path = os.getenv('CSV_PATH')
+        self.csv_path = config['CSV_PATH']
         self.users_reader = pd.read_csv(self.csv_path)
     def recover_web_user(self, email) -> Union[WebUser, bool]:
         user = self.users_reader.loc[self.users_reader['email'] == email]

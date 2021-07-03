@@ -1,3 +1,5 @@
+import toml
+config = toml.load('config.toml')
 from src.crud.db_modules.db_module import WEB_DATABASE
 from typing import Union, Tuple, Dict, Optional, List
 import os
@@ -12,7 +14,7 @@ class HackEPSDataBase(WEB_DATABASE):
         self.db = firestore.client()
 
     def recover_web_user(self, email) -> Union[WebUser, bool]:
-        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
+        todo_ref = self.db.collection(config['HACKESP2020_DB_PATH'] + '/users')
         for usr in todo_ref.stream():
             if usr.to_dict()['email'] == email:
                 return WebUser(usr.to_dict()['accepted'], usr.to_dict()['birthDate'], usr.to_dict()['displayName'],
@@ -21,13 +23,13 @@ class HackEPSDataBase(WEB_DATABASE):
         return None
 
     def recover_web_group(self, name) -> Union[Group, bool]:
-        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
+        todo_ref = self.db.collection(config['HACKESP2020_DB_PATH'] + '/teams')
         doc = todo_ref.document(name).get()
         return Group(doc.to_dict()['name']) if doc.to_dict() else None
 
     def recover_web_group_and_user(self, email):
-        users_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/users')
-        todo_ref = self.db.collection(os.getenv('HACKESP2020_DB_PATH') + '/teams')
+        users_ref = self.db.collection(config['HACKESP2020_DB_PATH'] + '/users')
+        todo_ref = self.db.collection(config['HACKESP2020_DB_PATH']+ '/teams')
         for grp in todo_ref.stream():
             members = grp.to_dict()['members']
             for member in members:

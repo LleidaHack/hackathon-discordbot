@@ -4,7 +4,8 @@ from abc import ABC
 from functools import wraps
 import logging
 import os
-
+import toml
+config = toml.load('config.toml')
 import discord
 from discord import Guild, TextChannel, File
 
@@ -31,9 +32,9 @@ class TraceCommand(ABC):
             except Exception as e:
                 command = args[0]
                 guild: Guild = command.ctx.guild
-                channel: TextChannel = guild.get_channel(int(os.getenv('LOG_ERROR_CHANNEL_ID')))
+                channel: TextChannel = guild.get_channel(config['LOG_ERROR_CHANNEL_ID'])
                 async with channel.typing():
-                    mod_role = filter(lambda x: x.name == os.getenv('ADMIN_ROLE'), guild.roles).__next__()
+                    mod_role = filter(lambda x: x.name == config['ADMIN_ROLE'], guild.roles).__next__()
                     embed = discord.Embed(title='¡Error! :eye::lips::eye:')
                     value = ''.join(traceback.format_exception(None, e, e.__traceback__))
                     logging.error(value)

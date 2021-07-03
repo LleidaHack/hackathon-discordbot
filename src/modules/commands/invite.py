@@ -12,7 +12,8 @@ from src.models.user import User as ModelUser
 from src.modules.commands import FireBaseCommand
 from src.modules.commands.command import CommandError
 from src.modules.commands.utils import TraceCommand
-
+import toml
+config = toml.load('config.toml')
 
 class InviteCommand(FireBaseCommand):
 
@@ -42,7 +43,7 @@ class InviteCommand(FireBaseCommand):
         return people
 
     def get_people_names(self, content: str):
-        start = len(os.getenv('DISCORD_PREFIX')) +  len('!invite')
+        start = len(config['DISCORD_PREFIX']) +  len('!invite')
         content = content[start + 1:].split()
         res = []
         actual = []

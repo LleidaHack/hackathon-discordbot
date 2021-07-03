@@ -223,7 +223,7 @@ ENV/
 env.bak/
 venv.bak/
 pythonenv*
-
+*.toml
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -278,3 +278,4 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,visualstudiocode,python,venv,virtualenv
 .idea**
 .envtest
+credentials.json

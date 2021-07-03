@@ -2,7 +2,8 @@ import logging
 import discord
 from discord import embeds 
 import os
-
+import toml
+config = toml.load('config.toml')
 from src.modules.commands import BaseCommand
 from src.modules.commands.utils import TraceCommand
 
@@ -14,7 +15,7 @@ class InfoCommand(BaseCommand):
         import src.texts.help_texts as texts
         from src.texts.const import const 
         logging.info("Enviando mensaje de información")
-        bot_info_channel_id = int(os.getenv('INFO_BOT_CHANNEL_ID'))
+        bot_info_channel_id = config['INFO_BOT_CHANNEL_ID']
         channel = self.ctx.guild.get_channel(bot_info_channel_id)
 
         embed = discord.Embed(
