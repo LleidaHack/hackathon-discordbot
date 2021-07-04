@@ -25,7 +25,7 @@ class JoinCommand(FireBaseCommand):
             await self.ctx.send(txt.ANY_INVITE(self.ctx.author.name, self.ctx.author.discriminator))
             return
         msg = self.ctx.message.content.split()
-        if len(msg) <= 1 and len(invitations) > 1:
+        if len(msg) <= 1 and invitations and len(invitations) > 1:
             await self.ctx.send(txt.MANY_INVITES(list(map(lambda x: x[1].group_name, invitations))))
             return
         inv_id, invitation = self.DB.get_invitation(self.ctx.author.id, ' '.join(msg[1:])) if len(msg) > 1 else \

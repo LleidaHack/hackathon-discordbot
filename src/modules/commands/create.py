@@ -17,6 +17,7 @@ class CreateCommand(FireBaseCommand):
         self.group_name = None
         self.group_creator = group_creator
         self.WEB_DB = WEB_DB
+    @FireBaseCommand.non_group_required
     @TraceCommand.traceback_print
     @FireBaseCommand.authorization_required
     async def apply(self):

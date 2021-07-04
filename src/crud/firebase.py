@@ -24,11 +24,14 @@ class WebDatabase:
             self.web_database = HackEPSDataBase()
         elif self.authentication_type == 'csv':
             self.web_database = CSVDataBase()
-
+    def register_user(self, email, name, lastname, github="", nickname=""):
+        return self.web_database.create_web_user(email, name, lastname, github, nickname)
     def recover_web_group_and_user(self, email):
         return self.web_database.recover_web_group_and_user(email)
     def recover_web_group(self, group_name):
         return self.web_database.recover_web_group(group_name)
+    def recover_web_user(self, email):
+        return self.web_database.recover_web_user(email)
 
 class BotDatabase:
     def __init__(self):
@@ -72,21 +75,21 @@ class BotDatabase:
     def create_or_update_group(self, group: Group) -> None:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/groups')
         json = group.__dict__  # {'name': group.group_name, "members": group.users, "role_id": group.role_id}
-        doc = todo_ref.document(group.name)
+        doc = todo_ref.document(group.name.lower())
         doc.set(json)
 
     def get_group(self, group_name: str) -> Optional[Group]:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/groups')
         if group_name:
-            doc = todo_ref.document(group_name).get()
+            doc = todo_ref.document(group_name.lower()).get()
             if doc.to_dict():
                 return Group(doc.to_dict()['name'], doc.to_dict()['members'], doc.to_dict()['role_id'])
         return None
 
     def create_invitation(self, user_id, group_name) -> None:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
-        json = {'user_id': user_id, "group_name": group_name, "status": 'PENDING'}
-        todo_ref.document(str(user_id) + group_name).set(json)
+        json = {'user_id': user_id, "group_name": group_name.lower(), "status": 'PENDING'}
+        todo_ref.document(str(user_id) + group_name.lower()).set(json)
 
     def get_invitations(self, user_id) -> List[Tuple[int, Invitation]]:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
@@ -100,24 +103,22 @@ class BotDatabase:
     def get_invitation(self, user_id, group_name) -> Optional[Tuple[int, Invitation]]:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/invite')
         for usr in todo_ref.stream():
-            if usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name:
+            if usr.to_dict()['user_id'] == user_id and usr.to_dict()['group_name'] == group_name.lower():
                 invit = Invitation.from_dict(usr.to_dict())
                 return usr.id, invit
-        return None
+        return None, None
 
     def accept_invitation(self, user_id, group_name) -> Optional[bool]:
         todo_ref = self.db.collection(config['DISCORD_DB_PATH']  + '/invite')
-        invitation = self.get_invitation(user_id, group_name)
+        user_id, invitation = self.get_invitation(user_id, group_name)
         if invitation:
-            user_id, invitation = invitation
-            invitation.accept()
-            todo_ref.document(user_id).set(invitation.__dict__)
+            todo_ref.document(user_id).delete()
             return True
         return False
 
     def delete_group (self, group_name):
         todo_ref = self.db.collection(config['DISCORD_DB_PATH'] + '/groups')
         if group_name:
-            doc = todo_ref.document(group_name)
+            doc = todo_ref.document(group_name.lower())
             if doc:
                 doc.delete()

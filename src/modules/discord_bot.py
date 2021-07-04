@@ -80,13 +80,13 @@ class DiscordBot:
         async def invite(ctx):
             if not ctx.guild:
                 ctx.guild = self.client.get_guild(config['GUILD'])
-            invite: InviteCommand = InviteCommand(ctx, BOT_DB)
+            invite: InviteCommand = InviteCommand(ctx, BOT_DB, self.client)
             await invite.apply()
 
         @self.client.command()
         async def join(ctx):
             if not ctx.guild:
-                ctx.guild = self.clientget_guild(config['GUILD'])
+                ctx.guild = self.client.get_guild(config['GUILD'])
             join: JoinCommand = JoinCommand(ctx, BOT_DB)
             await join.apply()
 
@@ -126,7 +126,7 @@ class DiscordBot:
                     not message.guild and not message.author.bot:
                 logging.info(f"Email enviado: {message.content}")
                 guild = self.client.get_guild(config['GUILD'])
-                group_creator: GroupCreator = GroupCreator(config['TEAMS_CATEGORY_ID'], BOT_DB, guild)
+                group_creator: GroupCreator = GroupCreator(BOT_DB, guild)
                 login_manager: FinishLogin = FinishLogin(guild, BOT_DB, WEB_DB, self.users_pool, config["HACKER_ROLE"],
                                                          group_creator)
                 await login_manager.finish_login(message.author, message.content)
@@ -159,7 +159,7 @@ class DiscordBot:
         @self.client.command()
         @discord_commands.has_permissions(administrator=True)
         async def register(ctx):
-            register: RegisterCommand = RegisterCommand(ctx ,BOT_DB)
+            register: RegisterCommand = RegisterCommand(ctx ,WEB_DB)
             await register.apply()
 
 

@@ -3,7 +3,7 @@ from typing import Optional, List
 
 import discord
 from discord import User as DiscordUser, Member
-from discord.ext.commands import Context
+from discord.ext.commands import Context, Bot
 
 import src.texts.invite_texts as txt
 from src.crud.firebase import BotDatabase
@@ -17,9 +17,9 @@ config = toml.load('config.toml')
 
 class InviteCommand(FireBaseCommand):
 
-    def __init__(self, context: Context, database: BotDatabase):
+    def __init__(self, context: Context, database: BotDatabase, bot: Bot):
         super().__init__(context, database)
-
+        self.bot = bot
     @TraceCommand.traceback_print
     @FireBaseCommand.authorization_required
     @FireBaseCommand.group_required
@@ -44,14 +44,21 @@ class InviteCommand(FireBaseCommand):
 
     def get_people_names(self, content: str):
         start = len(config['DISCORD_PREFIX']) +  len('!invite')
-        content = content[start + 1:].split()
+        content = content[start:].split(' ')
+        logging.info(f'CONTENT ENVIADO: {content}')
         res = []
         actual = []
         for string in content:
+            logging.info(f'Analizando string {string}')
             actual.append(string)
             if '#' in string:
                 res.append(' '.join(actual).split('#'))
+                logging.info(f'res actualizado: {res}')
                 actual = []
+            if '<@!' in string:
+                logging.info(f'Intentando invitar por mencion...')
+                user =self.bot.get_user(int(''.join(string[3:-1])))
+                if user: res.append([user.name, user.discriminator])
         return res
 
     async def check_people_availability(self, people):
@@ -91,7 +98,7 @@ class InviteCommand(FireBaseCommand):
             guild_member: Member = guild.get_member(p.discord_id)
             logging.info(f"{self.ctx.author} ha invitado a {guild_member.display_name}.")
             self.DB.create_invitation(p.discord_id, group.name)
-            await guild_member.send(str.format(txt.INVITED, group.name, group.name))
+            await guild_member.send(txt.INVITED(group.name))
 
 
             await self.ctx.author.send(f'Has invitado a {guild_member.display_name}.')

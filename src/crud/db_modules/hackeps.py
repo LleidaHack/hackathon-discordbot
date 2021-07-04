@@ -39,3 +39,7 @@ class HackEPSDataBase(WEB_DATABASE):
                                user['email'], user['fullName'], user['githubUrl'],
                                user['nickname']), Group(grp.to_dict()['name'])
         return self.recover_web_user(email), None
+        
+    def create_web_user(self, email, name, lastname, github="", nickname=""):
+        #REGISTRO NO IMPLEMENTADO PARA HACKEPS
+        pass

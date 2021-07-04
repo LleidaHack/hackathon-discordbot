@@ -16,3 +16,7 @@ class WEB_DATABASE(ABC):
     @abstractmethod
     def recover_web_group_and_user(self, email):
         pass
+
+    @abstractmethod
+    def create_web_user(self, email, name, lastname, github="", nickname=""):
+        pass
