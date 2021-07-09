@@ -20,8 +20,8 @@ class CSVDataBase(WEB_DATABASE):
         logging.info(f'Buscando por el usuario con mail {email}')
         if user.values.any():
             logging.info(f'usuario encontrado: {user}')
-            web_user = WebUser(accepted=user['accepted'], birthDate=user['birthDate'], displayName=user['displayName'], email=email, fullName=f"{user['name']} {user['lastname']}",
-                githubUrl=user['githubUrl'],nickname=user['nickname'])
+            web_user = WebUser(accepted=user['accepted'][0], birthDate=user['birthDate'][0], displayName=user['displayName'][0], email=email, fullName=f"{user['name'][0]} {user['lastname'][0]}",
+                githubUrl=user['githubUrl'][0],nickname=user['nickname'][0])
             return web_user
         return None
 
