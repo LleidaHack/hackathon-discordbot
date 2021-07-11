@@ -32,7 +32,6 @@ class CSVDataBase(WEB_DATABASE):
         return self.recover_web_user(email), None
 
     def create_web_user(self, email, name, lastname, github="", nickname=""):
-        new_user = {'accepted':True,'email':email,'name':name,'lastname':lastname,'displayName':nickname,'nickname':nickname,'githubUrl':github, 'birthDate':'01/01/1001'}
-        self.users_reader=self.users_reader.append(new_user, ignore_index=True)
+        self.users_reader=self.users_reader.append(pd.DataFrame([[email,name,lastname,nickname,nickname,github]],columns=['email','name','lastname','displayName','nickname','githubUrl']), ignore_index=True)
         logging.info(self.users_reader)
         self.users_reader.to_csv(self.csv_path)
