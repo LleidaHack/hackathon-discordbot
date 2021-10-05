@@ -1,5 +1,5 @@
 # Hackathon Bot - Discord
-
+**NOTE** DEPRECATED BOT. STAND BY FOR A NEW VERSION
 ## Usage
 
 **Package Requirements**:
